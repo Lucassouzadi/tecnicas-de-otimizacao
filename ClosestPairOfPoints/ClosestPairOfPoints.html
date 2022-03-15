@@ -1,0 +1,157 @@
+<html>
+
+<head>
+    <title>ClosestPairOfPoints</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <script type="text/javascript" src="/js/lib/dummy.js"></script>
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="myDiv">
+        <canvas id="myCanvas"></canvas>
+        <div class="input">Número de pontos: <input type="number" id="pointCount" value="50"></div>
+        <div class="input">Raio dos pontos: <input type="number" id="pointRadius" value="5"></div>
+        <div class="input">Largura da linha da solução: <input type="number" id="lineWidth" value="2"></div>
+        <div class="input">Largura da círculo da solução: <input type="number" id="circleWidth" value="5"></div>
+        <div class="input">Cor dos pontos: <input type="text" id="pointColor" value="#0095DD"></div>
+        <div class="input">Cor da solução: <input type="text" id="solutionColor" value="#EE0000"></div>
+
+        <button id="random">Random</button>
+        <button id="predefinido">Predefinido</button>
+        <button id="bruteForce">Força Bruta</button>
+    </div>
+
+    <script src="bruteForce.js"></script>
+    <script src="predefinido.js"></script>
+
+    <script type="text/javascript">
+
+        var WIDTH = 800;
+        var HEIGHT = 600;
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        var myDiv = document.getElementById("myDiv");
+        myDiv.style.width = WIDTH;
+
+        var params = {};
+        var inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            element.addEventListener("change", function (e) {
+                params[element.id] = element.value;
+            });
+            params[element.id] = element.value;
+        }
+        console.log(params);
+
+        document.getElementById("random").addEventListener("click", () => {
+            randomizePoints();
+            draw();
+        });
+        document.getElementById("predefinido").addEventListener("click", () => {
+            points = getPresetPoints();
+            draw();
+        });
+        document.getElementById("bruteForce").addEventListener("click", () => {
+            let closestPair = bruteForce(points)
+            revealSolution(closestPair);
+        });
+
+    </script>
+
+    <script type="text/javascript">
+
+        var points = getPresetPoints();
+        draw();
+
+        function getPresetPoints() {
+            let points = [];
+            for (let i = 0; i < predefinido.length; i++) {
+                points[i] = { x: predefinido[i].x * WIDTH, y: predefinido[i].y * HEIGHT };
+            }
+            return points;
+        }
+
+        function randomizePoints() {
+            let pointsString = "";
+            pointCount = params["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                let x = Math.random(), y = Math.random();
+                points[i] = { x: x * WIDTH, y: y * HEIGHT };
+                pointsString += `{x:${x}, y:${y}},\n`;
+            }
+            console.log(pointsString.substring(0, pointsString.length - 2))
+        }
+
+        function drawPoints() {
+            for (var i = 0; i < points.length; i++) {
+                var point = points[i];
+                drawPoint(point, params["pointColor"])
+            }
+        }
+
+        function drawPoint(point, color) {
+            let pointRadius = params["pointRadius"];
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, pointRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath()
+        }
+
+        function drawLine(p0, p1, color) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p1.x, p1.y);
+            ctx.lineWidth = params["lineWidth"];
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.closePath()
+        }
+
+        function revealSolution(closestPair) {
+            let { pointRadius, circleWidth, solutionColor} = params;
+
+            console.log(closestPair);
+            drawPoint(closestPair[0], solutionColor);
+            drawPoint(closestPair[1], solutionColor);
+            drawLine(closestPair[0], closestPair[1], solutionColor);
+
+            let centerX = (closestPair[0].x + closestPair[1].x) / 2
+            let centerY = (closestPair[0].y + closestPair[1].y) / 2
+            let radius = parseInt(pointRadius) + Math.sqrt(Math.pow(closestPair[1].x - closestPair[0].x, 2) + Math.pow(closestPair[1].y - closestPair[0].y, 2))
+            debugger;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.lineWidth = circleWidth;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPoints();
+        }
+
+    </script>
+
+</body>
+
+</html>
