@@ -34,8 +34,8 @@
         <canvas id="myCanvas"></canvas>
 
         <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
-        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" checked></div>
-        <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="4"></div>
+        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" unchecked></div>
+        <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="8"></div>
         <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshPoints" value="2"></div>
         <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshPoints" value="#0095DD"> </div>
         <div>Cor da solução: <input type="text" id="solutionColor" class="refreshPoints" value="#EE0000"> </div>
@@ -43,6 +43,7 @@
         <div id="div-random"><button id="random">Random</button>
             <div class="input">Número de pontos: <input type="number" id="pointCount" value="30"></div>
         </div>
+        <button id="randomCircle">Random (Circle)</button>
         <button id="predefinido">Predefinido</button>
         <button id="clearSolution">Limpa Solução</spam></button>
         <button id="quickHull">Quick Hull</spam></button>
@@ -99,6 +100,11 @@
             activeSolution = null;
             draw();
         });
+        document.getElementById("randomCircle").addEventListener("click", () => {
+            randomizePointsInCircle();
+            activeSolution = null;
+            draw();
+        });
         document.getElementById("predefinido").addEventListener("click", () => {
             points = getPresetPoints(predefinido);
             activeSolution = null;
@@ -146,6 +152,19 @@
             }
         }
 
+        function randomizePointsInCircle() {
+            pointCount = params["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                let r = Math.sqrt(Math.random())
+                let theta = 2 * Math.PI * Math.random()
+                points[i] = {
+                    x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
+                    y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
+                };
+            }
+        }
+
         function drawPoints() {
             for (var i = 0; i < points.length; i++) {
                 drawPoint(points[i], params["pointColor"], i);
@@ -167,7 +186,7 @@
             }
             if (point.name) {
                 ctx.font = pointRadius * 3 + 'px serif';
-                ctx.fillText(point.name, drawX - pointRadius * 3, drawY + pointRadius * 4);
+                ctx.fillText(point.name, drawX - pointRadius * 2.4, drawY + pointRadius * 3.3);
             }
         }
 

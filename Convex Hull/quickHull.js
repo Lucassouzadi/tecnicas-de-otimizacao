@@ -21,7 +21,7 @@ function quickHull(P) {
 
 function _quickHull(P, i, n) {
     let ccwToLine = P.filter(p => ccw(P[i], P[n], p) > 0)
-    if (ccwToLine.length == 0) return
+    if (ccwToLine.length == 0) return []
 
     let farthestPoint = ccwToLine.reduce((prev, current) => {
         d0 = dist(P[i], P[n], prev)
@@ -29,15 +29,12 @@ function _quickHull(P, i, n) {
         return (d0 < d1) ? prev : current
     })
 
-    let farthestPointInex = P.indexOf(farthestPoint)
+    let farthestPointIndex = P.indexOf(farthestPoint)
+    farthestPoint = { ...farthestPoint, name: String.fromCharCode(solutionCharCode++) }
 
     return [
-        ...checkUndefined(_quickHull(P, i, farthestPointInex)),
-        { ...farthestPoint, name: String.fromCharCode(solutionCharCode++) },
-        ...checkUndefined(_quickHull(P, farthestPointInex, n))
+        ..._quickHull(P, i, farthestPointIndex),
+        farthestPoint,
+        ..._quickHull(P, farthestPointIndex, n)
     ]
-}
-
-function checkUndefined(input) {
-    return input ? input : []
 }
