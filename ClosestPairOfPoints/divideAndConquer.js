@@ -43,7 +43,7 @@ function divideAndConquer(P, i, n, s0, s1, melhoria) {
     if (melhoria)
         closestP3 = divideAndConquer(P, P3i, P3n, P[P3i].x, P[P3n].x, melhoria); // Recursão infinita, ainda não pensei em como fazer funcionar
     else
-        closestP3 = bruteForceMelhorado(P, P3i, P3n);
+        closestP3 = bruteForceMelhorado(P, P3i, P3n); // TODO: fazer bruteForce adaptado
 
     closest = closestP3[2] < closest[2] ? closestP3 : closest; comparisons++;
 

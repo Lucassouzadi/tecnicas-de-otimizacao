@@ -1,0 +1,205 @@
+<html>
+
+<head>
+    <title>ClosestPairOfPoints</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #div-random {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #div-random button {
+            width: 100%;
+        }
+
+        #div-random div {
+            flex-shrink: 0;
+        }
+
+        canvas {
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="myDiv">
+        <canvas id="myCanvas"></canvas>
+
+        <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
+        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" checked></div>
+        <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="4"></div>
+        <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshPoints" value="2"></div>
+        <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshPoints" value="#0095DD"> </div>
+        <div>Cor da solução: <input type="text" id="solutionColor" class="refreshPoints" value="#EE0000"> </div>
+
+        <div id="div-random"><button id="random">Random</button>
+            <div class="input">Número de pontos: <input type="number" id="pointCount" value="30"></div>
+        </div>
+        <button id="predefinido">Predefinido</button>
+        <button id="clearSolution">Limpa Solução</spam></button>
+        <button id="quickHull">Quick Hull</spam></button>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="quickHull.js"></script>
+    <script src="predefinido.js"></script>
+
+    <script type="text/javascript">
+
+        var CANVAS_WIDTH = 900;
+        var CANVAS_HEIGHT = 400;
+        var CANVAS_MARGIN = 50;
+        var activeSolution = null;
+        var pointsEnabled = document.getElementById("pointsEnabled").checked;
+        var numbersEnabled = document.getElementById("numbersEnabled").checked;
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        canvas.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var myDiv = document.getElementById("myDiv");
+        myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+
+        var params = {};
+        var inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            element.addEventListener("change", function (e) {
+                params[element.id] = element.value;
+            });
+            params[element.id] = element.value;
+        }
+        var refreshPoints = document.getElementsByClassName("refreshPoints");
+        for (let i = 0; i < refreshPoints.length; i++) {
+            refreshPoints[i].addEventListener("change", function (e) {
+                draw();
+            });
+        }
+
+        document.getElementById("pointsEnabled").addEventListener("change", () => {
+            pointsEnabled = document.getElementById("pointsEnabled").checked;
+            draw();
+        });
+
+        document.getElementById("numbersEnabled").addEventListener("change", () => {
+            numbersEnabled = document.getElementById("numbersEnabled").checked;
+            draw();
+        });
+        document.getElementById("random").addEventListener("click", () => {
+            randomizePoints();
+            activeSolution = null;
+            draw();
+        });
+        document.getElementById("predefinido").addEventListener("click", () => {
+            points = getPresetPoints(predefinido);
+            activeSolution = null;
+            draw();
+        });
+
+        document.getElementById("quickHull").addEventListener("click", () => {
+            activeSolution = quickHull(points);
+            // document.getElementById("quickHull").innerHTML = "Quick Hull: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+            draw();
+        });
+
+        document.getElementById("clearSolution").addEventListener("click", () => {
+            activeSolution = null;
+            draw();
+        });
+
+    </script>
+
+    <script type="text/javascript">
+
+        var points = getPresetPoints(predefinido);
+        draw();
+
+        function getPresetPoints(presetPoints) {
+            presetPoints = normalizeArrayPositively(presetPoints);
+            let copy = [];
+            for (let i = 0; i < presetPoints.length; i++) {
+                copy[i] = {
+                    x: presetPoints[i].x * CANVAS_WIDTH,
+                    y: presetPoints[i].y * CANVAS_HEIGHT
+                };
+            }
+            return copy;
+        }
+
+        function randomizePoints() {
+            pointCount = params["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                points[i] = {
+                    x: Math.random() * CANVAS_WIDTH,
+                    y: Math.random() * CANVAS_HEIGHT
+                };
+            }
+        }
+
+        function drawPoints() {
+            for (var i = 0; i < points.length; i++) {
+                drawPoint(points[i], params["pointColor"], i);
+            }
+        }
+
+        function drawPoint(point, color, i) {
+            let drawX = point.x + CANVAS_MARGIN, drawY = point.y + CANVAS_MARGIN;
+            let pointRadius = params["pointRadius"];
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+
+            if (numbersEnabled && !point.name) {
+                ctx.font = pointRadius * 3 + 'px serif';
+                ctx.fillText(i, drawX + pointRadius * 2, drawY);
+            }
+            if (point.name) {
+                ctx.font = pointRadius * 3 + 'px serif';
+                ctx.fillText(point.name, drawX - pointRadius * 3, drawY + pointRadius * 4);
+            }
+        }
+
+        function drawLine(p0, p1, color) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x + CANVAS_MARGIN, p0.y + CANVAS_MARGIN);
+            ctx.lineTo(p1.x + CANVAS_MARGIN, p1.y + CANVAS_MARGIN);
+            ctx.lineWidth = params["lineWidth"];
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function revealSolution(solution) {
+            let { pointRadius, solutionColor } = params;
+
+            for (let i = 0; i < solution.length; i++) {
+                drawPoint(solution[i], params["solutionColor"], i);
+                drawLine(solution[i], solution[(i + 1) % solution.length], params["solutionColor"])
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (pointsEnabled)
+                drawPoints();
+            if (activeSolution)
+                revealSolution(activeSolution);
+        }
+
+    </script>
+
+</body>
+
+</html>
