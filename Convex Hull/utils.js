@@ -1,5 +1,5 @@
-function formatDecimal(n) {
-    return n.toFixed(20).match(/^-?\d*\.?0*\d{0,3}/)[0]
+function formatDecimal(n, casas) {
+    return n.toFixed(casas)
 }
 
 function normalize(vec) {

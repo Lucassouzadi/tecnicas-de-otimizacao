@@ -35,6 +35,7 @@
 
         <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
         <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" unchecked></div>
+        <div>Habilita coordenadas <input type="checkbox" id="coordinatesEnabled" class="refreshPoints" unchecked></div>
         <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="8"></div>
         <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshPoints" value="2"></div>
         <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshPoints" value="#0095DD"> </div>
@@ -47,6 +48,7 @@
         <button id="predefinido">Predefinido</button>
         <button id="clearSolution">Limpa Solução</spam></button>
         <button id="quickHull">Quick Hull</spam></button>
+        <button id="quickHullMelhorado">Quick Hull Melhorado</spam></button>
     </div>
 
     <script src="utils.js"></script>
@@ -95,6 +97,10 @@
             numbersEnabled = document.getElementById("numbersEnabled").checked;
             draw();
         });
+        document.getElementById("coordinatesEnabled").addEventListener("change", () => {
+            coordinatesEnabled = document.getElementById("coordinatesEnabled").checked;
+            draw();
+        });
         document.getElementById("random").addEventListener("click", () => {
             randomizePoints();
             activeSolution = null;
@@ -112,8 +118,14 @@
         });
 
         document.getElementById("quickHull").addEventListener("click", () => {
+            activeSolution = quickHull_OLD(points);
+            document.getElementById("quickHull").innerHTML = "Quick Hull: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
+            draw();
+        });
+
+        document.getElementById("quickHullMelhorado").addEventListener("click", () => {
             activeSolution = quickHull(points);
-            // document.getElementById("quickHull").innerHTML = "Quick Hull: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+            document.getElementById("quickHullMelhorado").innerHTML = "Quick Hull Melhorado: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
             draw();
         });
 
@@ -130,12 +142,15 @@
         draw();
 
         function getPresetPoints(presetPoints) {
-            presetPoints = normalizeArrayPositively(presetPoints);
+            normalizedPresetPoints = normalizeArrayPositively(presetPoints);
             let copy = [];
-            for (let i = 0; i < presetPoints.length; i++) {
+            for (let i = 0; i < normalizedPresetPoints.length; i++) {
                 copy[i] = {
-                    x: presetPoints[i].x * CANVAS_WIDTH,
-                    y: presetPoints[i].y * CANVAS_HEIGHT
+                    x: presetPoints[i].x,
+                    y: presetPoints[i].y,
+                    canvas_x: normalizedPresetPoints[i].x * CANVAS_WIDTH,
+                    canvas_y: normalizedPresetPoints[i].y * CANVAS_HEIGHT
+
                 };
             }
             return copy;
@@ -145,9 +160,12 @@
             pointCount = params["pointCount"];
             points = [];
             for (let i = 0; i < pointCount; i++) {
+                const x = Math.random(), y = Math.random();
                 points[i] = {
-                    x: Math.random() * CANVAS_WIDTH,
-                    y: Math.random() * CANVAS_HEIGHT
+                    x: x,
+                    y: y,
+                    canvas_x: x * CANVAS_WIDTH,
+                    canvas_y: y * CANVAS_HEIGHT
                 };
             }
         }
@@ -159,9 +177,11 @@
                 let r = Math.sqrt(Math.random())
                 let theta = 2 * Math.PI * Math.random()
                 points[i] = {
-                    x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
-                    y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
-                };
+                    x: r * Math.cos(theta),
+                    y: r * Math.sin(theta),
+                    canvas_x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
+                    canvas_y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
+                }
             }
         }
 
@@ -172,7 +192,7 @@
         }
 
         function drawPoint(point, color, i) {
-            let drawX = point.x + CANVAS_MARGIN, drawY = point.y + CANVAS_MARGIN;
+            let drawX = point.canvas_x + CANVAS_MARGIN, drawY = point.canvas_y + CANVAS_MARGIN;
             let pointRadius = params["pointRadius"];
             ctx.beginPath();
             ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
@@ -188,12 +208,16 @@
                 ctx.font = pointRadius * 3 + 'px serif';
                 ctx.fillText(point.name, drawX - pointRadius * 2.4, drawY + pointRadius * 3.3);
             }
+            if (coordinatesEnabled) {
+                ctx.font = pointRadius * 1.6 + 'px serif';
+                ctx.fillText("(" + formatDecimal(point.x, 2) + ", " + formatDecimal(point.y, 2) + ")", drawX, drawY + pointRadius * 3.3);
+            }
         }
 
         function drawLine(p0, p1, color) {
             ctx.beginPath();
-            ctx.moveTo(p0.x + CANVAS_MARGIN, p0.y + CANVAS_MARGIN);
-            ctx.lineTo(p1.x + CANVAS_MARGIN, p1.y + CANVAS_MARGIN);
+            ctx.moveTo(p0.canvas_x + CANVAS_MARGIN, p0.canvas_y + CANVAS_MARGIN);
+            ctx.lineTo(p1.canvas_x + CANVAS_MARGIN, p1.canvas_y + CANVAS_MARGIN);
             ctx.lineWidth = params["lineWidth"];
             ctx.strokeStyle = color;
             ctx.stroke();
@@ -214,7 +238,7 @@
             if (pointsEnabled)
                 drawPoints();
             if (activeSolution)
-                revealSolution(activeSolution);
+                revealSolution(activeSolution[0]);
         }
 
     </script>
