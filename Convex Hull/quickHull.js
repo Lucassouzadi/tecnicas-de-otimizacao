@@ -1,8 +1,6 @@
 var solutionCharCode;
 
 function quickHull_OLD(P) {
-    let solution = []
-
     let time = new Date().getTime()
 
     P.sort((a, b) => (a.x > b.x) ? 1 : -1)
@@ -11,7 +9,7 @@ function quickHull_OLD(P) {
     let B = { ...P[P.length - 1], name: "B" }
     solutionCharCode = 67; // String.fromCharCode(67) == "C"
 
-    solution = [
+    let solution = [
         A,
         ..._quickHull_OLD(P, 0, P.length - 1),
         B,
@@ -43,8 +41,6 @@ function _quickHull_OLD(P, i, n) {
 }
 
 function quickHull(P) {
-    let solution = []
-
     let time = new Date().getTime()
 
     P.sort((a, b) => (a.x > b.x) ? 1 : -1)
@@ -62,7 +58,7 @@ function quickHull(P) {
             upperHalf.push(p)
     }
 
-    solution = [
+    let solution = [
         A,
         ..._quickHull(bottomHalf, A, B),
         B,

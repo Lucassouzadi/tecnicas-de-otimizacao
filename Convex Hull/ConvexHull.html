@@ -1,7 +1,7 @@
 <html>
 
 <head>
-    <title>ClosestPairOfPoints</title>
+    <title>ConvexHull</title>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 
     <style type="text/css">
@@ -34,8 +34,8 @@
         <canvas id="myCanvas"></canvas>
 
         <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
-        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" unchecked></div>
-        <div>Habilita coordenadas <input type="checkbox" id="coordinatesEnabled" class="refreshPoints" unchecked></div>
+        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" checked></div>
+        <div>Habilita coordenadas <input type="checkbox" id="coordinatesEnabled" class="refreshPoints" checked></div>
         <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="8"></div>
         <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshPoints" value="2"></div>
         <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshPoints" value="#0095DD"> </div>
@@ -49,10 +49,12 @@
         <button id="clearSolution">Limpa Solução</spam></button>
         <button id="quickHull">Quick Hull</spam></button>
         <button id="quickHullMelhorado">Quick Hull Melhorado</spam></button>
+        <button id="grahamScan">Graham Scan</spam></button>
     </div>
 
     <script src="utils.js"></script>
     <script src="quickHull.js"></script>
+    <script src="grahamScan.js"></script>
     <script src="predefinido.js"></script>
 
     <script type="text/javascript">
@@ -126,6 +128,12 @@
         document.getElementById("quickHullMelhorado").addEventListener("click", () => {
             activeSolution = quickHull(points);
             document.getElementById("quickHullMelhorado").innerHTML = "Quick Hull Melhorado: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
+            draw();
+        });
+
+        document.getElementById("grahamScan").addEventListener("click", () => {
+            activeSolution = grahamScan(points);
+            document.getElementById("grahamScan").innerHTML = "Graham Scan: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
             draw();
         });
 
@@ -211,6 +219,7 @@
             if (coordinatesEnabled) {
                 ctx.font = pointRadius * 1.6 + 'px serif';
                 ctx.fillText("(" + formatDecimal(point.x, 2) + ", " + formatDecimal(point.y, 2) + ")", drawX, drawY + pointRadius * 3.3);
+                if (point.angle != null) ctx.fillText(formatDecimal(point.angle, 2)+"°", drawX, drawY + pointRadius * 5.3);
             }
         }
 
