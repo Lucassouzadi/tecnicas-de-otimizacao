@@ -29,8 +29,11 @@
     </style>
 </head>
 
+<script src="../header.js" type="text/javascript" defer></script>
+
 <body>
     <div id="myDiv">
+        <div id="header"></div>
         <canvas id="myCanvas"></canvas>
 
         <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
@@ -219,7 +222,7 @@
             if (coordinatesEnabled) {
                 ctx.font = pointRadius * 1.6 + 'px serif';
                 ctx.fillText("(" + formatDecimal(point.x, 2) + ", " + formatDecimal(point.y, 2) + ")", drawX, drawY + pointRadius * 3.3);
-                if (point.angle != null) ctx.fillText(formatDecimal(point.angle, 2)+"°", drawX, drawY + pointRadius * 5.3);
+                if (point.angle != null) ctx.fillText(formatDecimal(point.angle, 2) + "°", drawX, drawY + pointRadius * 5.3);
             }
         }
 
