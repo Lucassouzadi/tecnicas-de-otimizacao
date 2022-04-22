@@ -10,6 +10,12 @@
             flex-direction: column;
         }
 
+        #myDiv #algorithms {
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
         #div-random {
             display: flex;
             flex-direction: row;
@@ -29,8 +35,11 @@
     </style>
 </head>
 
+<script src="../header.js" type="text/javascript" defer></script>
+
 <body>
     <div id="myDiv">
+        <div id="header"></div>
         <canvas id="myCanvas"></canvas>
 
         <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
@@ -47,10 +56,12 @@
         <button id="predefinido">Predefinido</button>
         <button id="predefinidoBugado">Predefinido que estraga o D&Q Melhorado</button>
         <button id="clearSolution">Limpa Solução</spam></button>
-        <button id="bruteForce">Força Bruta</spam></button>
-        <button id="bruteForceMelhorado">Força Bruta (Melhorado)</spam></button>
-        <button id="divideAndConquer">Divisão e Conquista</spam></button>
-        <button id="divideAndConquerMelhorado">Divisão e Conquista melhorado(?)</spam></button>
+        <div id="algorithms">
+            <button id="bruteForce">Força Bruta</spam></button>
+            <button id="bruteForceMelhorado">Força Bruta (Melhorado)</spam></button>
+            <button id="divideAndConquer">Divisão e Conquista</spam></button>
+            <button id="divideAndConquerMelhorado">Divisão e Conquista com Bruteforce adaptado</spam></button>
+        </div>
     </div>
 
     <script src="utils.js"></script>
@@ -60,8 +71,8 @@
 
     <script type="text/javascript">
 
-        var CANVAS_WIDTH = 1600;
-        var CANVAS_HEIGHT = 600;
+        var CANVAS_WIDTH = 1000;
+        var CANVAS_HEIGHT = 400;
         var activeSolution = null;
         var pointsEnabled = document.getElementById("pointsEnabled").checked;
         var numbersEnabled = document.getElementById("numbersEnabled").checked;
@@ -120,25 +131,25 @@
         });
         document.getElementById("bruteForce").addEventListener("click", () => {
             activeSolution = bruteForce(points);
-            document.getElementById("bruteForce").innerHTML = "Força Bruta: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+            document.getElementById("bruteForce").innerHTML = "Força Bruta: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos de distância";
             draw();
         });
         document.getElementById("bruteForceMelhorado").addEventListener("click", () => {
             activeSolution = bruteForceMelhorado(points);
-            document.getElementById("bruteForceMelhorado").innerHTML = "Força Bruta (Melhorado): d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+            document.getElementById("bruteForceMelhorado").innerHTML = "Força Bruta (Melhorado): d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos de distância";
             draw();
         });
         document.getElementById("divideAndConquer").addEventListener("click", () => {
-            activeSolution = closestDivideAndConquer(points);
-            document.getElementById("divideAndConquer").innerHTML = "Divisão e Conquista: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+            activeSolution = closestPairOfPointsDivideAndConquer(points);
+            document.getElementById("divideAndConquer").innerHTML = "Divisão e Conquista: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos de distância";
             draw();
         });
         document.getElementById("divideAndConquerMelhorado").addEventListener("click", () => {
             try {
-                activeSolution = closestDivideAndConquer(points, 0, points.length - 1, true);
-                document.getElementById("divideAndConquerMelhorado").innerHTML = "Divisão e Conquista melhorado(?): d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos";
+                activeSolution = closestPairOfPointsDivideAndConquer(points, 0, points.length - 1, true);
+                document.getElementById("divideAndConquerMelhorado").innerHTML = "Divisão e Conquista com Bruteforce adaptado: d: " + formatDecimal(activeSolution[2]) + ", " + activeSolution[3] + "ms, " + activeSolution[4] + " comparações, " + activeSolution[5] + " cálculos de distância";
             } catch (error) {
-                document.getElementById("divideAndConquerMelhorado").innerHTML = "Divisão e Conquista melhorado(?): ERROR " + error.message;
+                document.getElementById("divideAndConquerMelhorado").innerHTML = "Divisão e Conquista com Bruteforce adaptado: ERROR " + error.message;
             }
             draw();
         });
