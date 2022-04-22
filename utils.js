@@ -1,11 +1,22 @@
-function formatDecimal(n, casas) {
-    return n.toFixed(casas)
+// return distance between the line p1_p2 and the points p0 and p1
+function dist(p0, p1) {
+    return Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2));
+}
+
+// return distance between the line p1_p2 and the point p
+function dist(p0, p1, p) {
+    return ((p1.x - p0.x) * (p0.y - p.y) - (p0.x - p.x) * (p1.y - p0.y)) / Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2))
+}
+
+function formatDecimal(n, decimalPlaces) {
+    return n.toFixed(decimalPlaces)
 }
 
 function normalize(vec) {
     const length = Math.hypot(vec.x, vec.y);
     return { x: vec.x / length, y: vec.y / length }
 }
+
 function normalizeArray(array) {
     let normalized = []
     for (let i = 0; i < array.length; i++) {
@@ -18,6 +29,7 @@ function normalizePositively(vec) {
     const length = Math.hypot(vec.x, vec.y);
     return { x: (1 + vec.x / length) / 2, y: (1 + vec.y / length) / 2 }
 }
+
 function normalizeArrayPositively(array) {
     let normalizedPositively = []
     let length = 0;
@@ -29,14 +41,13 @@ function normalizeArrayPositively(array) {
     }
     return normalizedPositively
 }
-function dist(p1, p2, p) {
-    return ((p2.x - p1.x) * (p1.y - p.y) - (p1.x - p.x) * (p2.y - p1.y)) / Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2))
-}
+
+// ccw > 0: counter-clockwise; ccw < 0: clockwise; ccw = 0: collinear
 function ccw(p1, p2, p3) {
-    // ccw > 0: counter-clockwise; ccw < 0: clockwise; ccw = 0: collinear
     return (p2.x - p1.x) * (p3.y - p1.y)
         - (p2.y - p1.y) * (p3.x - p1.x);
 }
+
 function polarAngle(p) {
     let angle;
     if (p.x == 0)
@@ -48,13 +59,12 @@ function polarAngle(p) {
     }
     return angle;
 }
-function dotProduct(vec1, vec2) {
-    return (vec1.x * vec2.x + vec1.y * vec2.y);
-}
-function norm(vec) {
-    return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
-}
-function computeAngle(v1, v2) {
-    var ac = dotProduct(v1, v2);
-    return Math.acos(ac / (norm(v1) * norm(v2))) * ONE_RADIAN;
+
+function isAngleConvex(p0, p1, p2) {
+    let dx1 = p1.x - p0.x
+    let dy1 = p1.y - p0.y
+    let dx2 = p2.x - p1.x
+    let dy2 = p2.y - p1.y
+    let crossProductZ = dx1 * dy2 - dy1 * dx2
+    return crossProductZ < 0.0;
 }

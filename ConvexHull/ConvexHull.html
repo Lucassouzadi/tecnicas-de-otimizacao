@@ -10,6 +10,12 @@
             flex-direction: column;
         }
 
+        #myDiv #algorithms {
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
         #div-random {
             display: flex;
             flex-direction: row;
@@ -36,13 +42,14 @@
         <div id="header"></div>
         <canvas id="myCanvas"></canvas>
 
-        <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshPoints" checked></div>
-        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshPoints" checked></div>
-        <div>Habilita coordenadas <input type="checkbox" id="coordinatesEnabled" class="refreshPoints" checked></div>
-        <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshPoints" value="8"></div>
-        <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshPoints" value="2"></div>
-        <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshPoints" value="#0095DD"> </div>
-        <div>Cor da solução: <input type="text" id="solutionColor" class="refreshPoints" value="#EE0000"> </div>
+        <div>Habilita pontos <input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita números <input type="checkbox" id="numbersEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita coordenadas <input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
+        <div>Raio dos pontos: <input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
+        <div>Tamanho das letras da solução: <input type="number" id="letterSize" class="refreshCanvas" value="8"></div>
+        <div>Largura da linha da solução: <input type="number" id="lineWidth" class="refreshCanvas" value="2"></div>
+        <div>Cor dos pontos: <input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
+        <div>Cor da solução: <input type="text" id="solutionColor" class="refreshCanvas" value="#EE0000"> </div>
 
         <div id="div-random"><button id="random">Random</button>
             <div class="input">Número de pontos: <input type="number" id="pointCount" value="30"></div>
@@ -50,12 +57,13 @@
         <button id="randomCircle">Random (Circle)</button>
         <button id="predefinido">Predefinido</button>
         <button id="clearSolution">Limpa Solução</spam></button>
-        <button id="quickHull">Quick Hull</spam></button>
-        <button id="quickHullMelhorado">Quick Hull Melhorado</spam></button>
-        <button id="grahamScan">Graham Scan</spam></button>
+        <div id="algorithms">
+            <button id="quickHull">Quick Hull</spam></button>
+            <button id="grahamScan">Graham Scan</spam></button>
+        </div>
     </div>
 
-    <script src="utils.js"></script>
+    <script src="../utils.js"></script>
     <script src="quickHull.js"></script>
     <script src="grahamScan.js"></script>
     <script src="predefinido.js"></script>
@@ -86,9 +94,9 @@
             });
             params[element.id] = element.value;
         }
-        var refreshPoints = document.getElementsByClassName("refreshPoints");
-        for (let i = 0; i < refreshPoints.length; i++) {
-            refreshPoints[i].addEventListener("change", function (e) {
+        var refreshCanvas = document.getElementsByClassName("refreshCanvas");
+        for (let i = 0; i < refreshCanvas.length; i++) {
+            refreshCanvas[i].addEventListener("change", function (e) {
                 draw();
             });
         }
@@ -123,20 +131,14 @@
         });
 
         document.getElementById("quickHull").addEventListener("click", () => {
-            activeSolution = quickHull_OLD(points);
-            document.getElementById("quickHull").innerHTML = "Quick Hull: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
-            draw();
-        });
-
-        document.getElementById("quickHullMelhorado").addEventListener("click", () => {
             activeSolution = quickHull(points);
-            document.getElementById("quickHullMelhorado").innerHTML = "Quick Hull Melhorado: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
+            document.getElementById("quickHull").innerHTML = "Quick Hull: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms ordenando, " + activeSolution[2] + "ms processando, total: " + (activeSolution[1] + activeSolution[2]) + "ms";
             draw();
         });
 
         document.getElementById("grahamScan").addEventListener("click", () => {
             activeSolution = grahamScan(points);
-            document.getElementById("grahamScan").innerHTML = "Graham Scan: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms";
+            document.getElementById("grahamScan").innerHTML = "Graham Scan: " + activeSolution[0].length + " vértices, " + activeSolution[1] + "ms ordenando, " + activeSolution[2] + "ms processando, total: " + (activeSolution[1] + activeSolution[2]) + "ms";
             draw();
         });
 
@@ -204,7 +206,7 @@
 
         function drawPoint(point, color, i) {
             let drawX = point.canvas_x + CANVAS_MARGIN, drawY = point.canvas_y + CANVAS_MARGIN;
-            let pointRadius = params["pointRadius"];
+            let { pointRadius, letterSize } = params;
             ctx.beginPath();
             ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
             ctx.fillStyle = color;
@@ -216,8 +218,8 @@
                 ctx.fillText(i, drawX + pointRadius * 2, drawY);
             }
             if (point.name) {
-                ctx.font = pointRadius * 3 + 'px serif';
-                ctx.fillText(point.name, drawX - pointRadius * 2.4, drawY + pointRadius * 3.3);
+                ctx.font = letterSize * 3 + 'px serif';
+                ctx.fillText(point.name, drawX - letterSize * 2.4, drawY + letterSize * 3.3);
             }
             if (coordinatesEnabled) {
                 ctx.font = pointRadius * 1.6 + 'px serif';
@@ -240,8 +242,8 @@
             let { pointRadius, solutionColor } = params;
 
             for (let i = 0; i < solution.length; i++) {
-                drawPoint(solution[i], params["solutionColor"], i);
-                drawLine(solution[i], solution[(i + 1) % solution.length], params["solutionColor"])
+                drawPoint(solution[i], solutionColor, i);
+                drawLine(solution[i], solution[(i + 1) % solution.length], solutionColor)
             }
         }
 
