@@ -10,7 +10,7 @@
             flex-direction: column;
         }
 
-        #myDiv #algorithms {
+        #algorithms {
             padding-top: 25px;
             display: flex;
             flex-direction: column;
@@ -34,7 +34,26 @@
         }
 
         strong {
-            font-size: 22px;
+            font-size: 20px;
+        }
+
+        #enableOptions {
+            width: 30%;
+            background-color: #5dbe60;
+            color: white;
+        }
+
+        button {
+            background-color: #e7e7e7;
+            color: black;
+            border: none;
+            padding: 1.5px 0;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -46,31 +65,36 @@
         <div id="header"></div>
         <canvas id="myCanvas"></canvas>
         <strong>Clique no canvas para adicionar pontos extras</strong>
-
-        <div>Habilita pontos<input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita números dos pontos<input type="checkbox" id="numberIdsEnabled" class="refreshCanvas" checked>
+        <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
+        <div id="options">
+            <div>Habilita pontos<input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita números dos pontos<input type="checkbox" id="numberIdsEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita convex hull<input type="checkbox" id="convexHullEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita coordenadas<input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita ângulos<input type="checkbox" id="anglesEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita diagrama de Voronoi<input type="checkbox" id="voronoiEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita caminho mais curto<input type="checkbox" id="pathEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita grafo<input type="checkbox" id="graphEnabled" class="refreshCanvas" checked></div>
+            <div>Raio dos pontos:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
+            <div>Tamanho das letras da solução:<input type="number" id="letterSize" class="refreshCanvas" value="8">
+            </div>
+            <div>Largura das linhas do convex hull:<input type="number" id="convexHullWidth" class="refreshCanvas"
+                    value="3"></div>
+            <div>Largura das linhas do grafo:<input type="number" id="graphWidth" class="refreshCanvas" value="2"></div>
+            <div>Largura das linhas do diagrama de Voronoi:<input type="number" id="voronoiWidth" class="refreshCanvas"
+                    value="1"></div>
+            <div>Largura da linha do menor caminho:<input type="number" id="pathWidth" class="refreshCanvas" value="4">
+            </div>
+            <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
+            <div>Cor do convex hull:<input type="text" id="convexHullColor" class="refreshCanvas" value="#4C8C08">
+            </div>
+            <div>Cor do diagrama de Voronoi:<input type="text" id="voronoiColor" class="refreshCanvas" value="#f79496">
+            </div>
+            <div>Cor do grafo:<input type="text" id="graphColor" class="refreshCanvas" value="#ff6161"> </div>
+            <div>Cor do caminho:<input type="text" id="pathColor" class="refreshCanvas" value="#6317cf"> </div>
         </div>
-        <div>Habilita convex hull<input type="checkbox" id="convexHullEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita coordenadas<input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita ângulos<input type="checkbox" id="anglesEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita diagrama de Voronoi<input type="checkbox" id="voronoiEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita caminho mais curto<input type="checkbox" id="pathEnabled" class="refreshCanvas" checked></div>
-        <div>Habilita grafo<input type="checkbox" id="graphEnabled" class="refreshCanvas" checked></div>
-        <div>Raio dos pontos:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
-        <div>Tamanho das letras da solução:<input type="number" id="letterSize" class="refreshCanvas" value="8"></div>
-        <div>Largura das linhas do convex hull:<input type="number" id="convexHullWidth" class="refreshCanvas"
-                value="3"></div>
-        <div>Largura das linhas do grafo:<input type="number" id="graphWidth" class="refreshCanvas" value="2"></div>
-        <div>Largura das linhas do diagrama de Voronoi:<input type="number" id="voronoiWidth" class="refreshCanvas"
-                value="1"></div>
-        <div>Largura da linha do menor caminho:<input type="number" id="pathWidth" class="refreshCanvas" value="4">
-        </div>
-        <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
-        <div>Cor do convex hull:<input type="text" id="convexHullColor" class="refreshCanvas" value="#4C8C08"> </div>
-        <div>Cor do diagrama de Voronoi:<input type="text" id="voronoiColor" class="refreshCanvas" value="#f79496">
-        </div>
-        <div>Cor do grafo:<input type="text" id="graphColor" class="refreshCanvas" value="#ff6161"> </div>
-        <div>Cor do caminho:<input type="text" id="pathColor" class="refreshCanvas" value="#6317cf"> </div>
         <div id="div-random">
             <button id="random">Random</button>
             <div class="input">Número de pontos:<input type="number" id="pointCount" value="30"></div>
@@ -116,21 +140,21 @@
         var myDiv = document.getElementById("myDiv");
         myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
 
-        var params = {};
+        var options = {};
         var inputs = document.getElementsByTagName("input");
         for (let i = 0; i < inputs.length; i++) {
             let element = inputs[i];
             if (element.type == "checkbox") {
                 element.addEventListener("change", function (e) {
-                    params[element.id] = element.checked;
+                    options[element.id] = element.checked;
                     draw();
                 });
-                params[element.id] = element.checked;
+                options[element.id] = element.checked;
             } else {
                 element.addEventListener("change", function (e) {
-                    params[element.id] = element.value;
+                    options[element.id] = element.value;
                 });
-                params[element.id] = element.value;
+                options[element.id] = element.value;
             }
         }
         var refreshCanvas = document.getElementsByClassName("refreshCanvas");
@@ -183,6 +207,19 @@
             draw();
         });
 
+        document.getElementById("enableOptions").addEventListener("click", () => {
+            let optionsElem = document.getElementById("options")
+            let enableOptionsButton = document.getElementById("enableOptions")
+            if (optionsElem.style.display == 'none') {
+                enableOptionsButton.innerHTML = '<strong>˄</strong> Esconder opções <strong>˄</strong>'
+                optionsElem.style.display = 'block'
+            }
+            else {
+                enableOptionsButton.innerHTML = '<strong>˅</strong> Mostrar opções <strong>˅</strong>'
+                optionsElem.style.display = 'none'
+            }
+        });
+
         var recalculatePath = document.getElementsByClassName("recalculatePath");
         for (let i = 0; i < recalculatePath.length; i++) {
             recalculatePath[i].addEventListener("change", () => {
@@ -231,7 +268,7 @@
         }
 
         function computeShortestPath() {
-            let { source, target } = params
+            let { source, target } = options
             if (graph) {
                 shortestPath = activePathFindingAlgorithm(graph, source, target)
                 console.log("shortestPath", shortestPath)
@@ -283,7 +320,7 @@
         }
 
         function randomizePoints() {
-            pointCount = params["pointCount"];
+            pointCount = options["pointCount"];
             points = [];
             for (let i = 0; i < pointCount; i++) {
                 const x = Math.random(), y = Math.random();
@@ -296,7 +333,7 @@
 
 
         function randomizePointsInCircle() {
-            pointCount = params["pointCount"];
+            pointCount = options["pointCount"];
             points = [];
             for (let i = 0; i < pointCount; i++) {
                 let r = Math.sqrt(Math.random())
@@ -312,13 +349,13 @@
 
         function drawPoints() {
             for (var i = 0; i < points.length; i++) {
-                drawPoint(points[i], params["pointColor"], i);
+                drawPoint(points[i], options["pointColor"], i);
             }
         }
 
         function drawPoint(point, color, i) {
             let drawX = point.x + CANVAS_MARGIN, drawY = point.y + CANVAS_MARGIN;
-            let { pointRadius, letterSize, numberIdsEnabled, coordinatesEnabled, anglesEnabled } = params;
+            let { pointRadius, letterSize, numberIdsEnabled, coordinatesEnabled, anglesEnabled } = options;
             ctx.beginPath();
             ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
             ctx.fillStyle = color;
@@ -352,7 +389,7 @@
         }
 
         function drawConvexHull(solution) {
-            let { convexHullColor, convexHullWidth, convexHullEnabled } = params;
+            let { convexHullColor, convexHullWidth, convexHullEnabled } = options;
             if (convexHullEnabled) {
                 for (let i = 0; i < solution.length; i++) {
                     drawPoint(solution[i], convexHullColor);
@@ -362,7 +399,7 @@
         }
 
         function drawGraph(diagram) {
-            let { graphColor, graphEnabled, graphWidth } = params;
+            let { graphColor, graphEnabled, graphWidth } = options;
             if (graphEnabled) {
                 for (let i = 0; i < diagram.edges.length; i++) {
                     let aresta = diagram.edges[i]
@@ -373,7 +410,7 @@
         }
 
         function drawVoronoiDiagram(diagram) {
-            let { voronoiColor, voronoiEnabled, voronoiWidth } = params;
+            let { voronoiColor, voronoiEnabled, voronoiWidth } = options;
 
             if (voronoiEnabled) {
                 for (let i = 0; i < diagram.edges.length; i++) {
@@ -385,7 +422,7 @@
         }
 
         function drawShortestPath(path) {
-            let { pathColor, pathEnabled, pathWidth } = params;
+            let { pathColor, pathEnabled, pathWidth } = options;
             if (pathEnabled)
                 for (let i = 0; i < path.length - 1; i++)
                     drawLine(graph.vertices[path[i]], graph.vertices[path[i + 1]], pathWidth, pathColor)
@@ -397,7 +434,7 @@
                 drawVoronoiDiagram(voronoiDiagram)
             if (graph)
                 drawGraph(voronoiDiagram)
-            if (params["pointsEnabled"])
+            if (options["pointsEnabled"])
                 drawPoints();
             if (convexHull)
                 drawConvexHull(convexHull[0]);
