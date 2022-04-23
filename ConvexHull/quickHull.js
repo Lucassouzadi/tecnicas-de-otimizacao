@@ -39,8 +39,8 @@ function _quickHull(ccwToLine, p0, p1) {
 
     if (ccwToLine.length == 0) return []
     let farthestPoint = ccwToLine.reduce((prev, current) => {
-        d0 = dist(p0, p1, prev)
-        d1 = dist(p0, p1, current)
+        d0 = distLine(p0, p1, prev)
+        d1 = distLine(p0, p1, current)
         return (d0 < d1) ? prev : current
     })
 

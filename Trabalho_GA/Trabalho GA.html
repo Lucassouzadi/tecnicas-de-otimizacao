@@ -1,0 +1,412 @@
+<html>
+
+<head>
+    <title>Trabalho GA</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #myDiv #algorithms {
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #div-random {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #div-random button {
+            width: 100%;
+        }
+
+        #div-random div {
+            flex-shrink: 0;
+        }
+
+        canvas {
+            background: #eee;
+        }
+
+        strong {
+            font-size: 22px;
+        }
+    </style>
+</head>
+
+<script src="../header.js" type="text/javascript" defer></script>
+
+<body>
+    <div id="myDiv">
+        <div id="header"></div>
+        <canvas id="myCanvas"></canvas>
+        <strong>Clique no canvas para adicionar pontos extras</strong>
+
+        <div>Habilita pontos<input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita números dos pontos<input type="checkbox" id="numberIdsEnabled" class="refreshCanvas" checked>
+        </div>
+        <div>Habilita convex hull<input type="checkbox" id="convexHullEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita coordenadas<input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita ângulos<input type="checkbox" id="anglesEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita diagrama de Voronoi<input type="checkbox" id="voronoiEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita caminho mais curto<input type="checkbox" id="pathEnabled" class="refreshCanvas" checked></div>
+        <div>Habilita grafo<input type="checkbox" id="graphEnabled" class="refreshCanvas" checked></div>
+        <div>Raio dos pontos:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
+        <div>Tamanho das letras da solução:<input type="number" id="letterSize" class="refreshCanvas" value="8"></div>
+        <div>Largura das linhas do convex hull:<input type="number" id="convexHullWidth" class="refreshCanvas"
+                value="3"></div>
+        <div>Largura das linhas do grafo:<input type="number" id="graphWidth" class="refreshCanvas" value="2"></div>
+        <div>Largura das linhas do diagrama de Voronoi:<input type="number" id="voronoiWidth" class="refreshCanvas"
+                value="1"></div>
+        <div>Largura da linha do menor caminho:<input type="number" id="pathWidth" class="refreshCanvas" value="4">
+        </div>
+        <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
+        <div>Cor do convex hull:<input type="text" id="convexHullColor" class="refreshCanvas" value="#4C8C08"> </div>
+        <div>Cor do diagrama de Voronoi:<input type="text" id="voronoiColor" class="refreshCanvas" value="#f79496">
+        </div>
+        <div>Cor do grafo:<input type="text" id="graphColor" class="refreshCanvas" value="#ff6161"> </div>
+        <div>Cor do caminho:<input type="text" id="pathColor" class="refreshCanvas" value="#6317cf"> </div>
+        <div id="div-random">
+            <button id="random">Random</button>
+            <div class="input">Número de pontos:<input type="number" id="pointCount" value="30"></div>
+        </div>
+        <button id="randomCircle">Random (círculo)</button>
+        <button id="predefinido">Predefinido</button>
+        <button id="clearSolution">Limpa Solução</spam></button>
+        <div id="algorithms">
+            <button id="grahamScan">Graham Scan</spam></button>
+            <button id="voronoi">Voronoi (Fortune)</spam></button>
+            <div id="div-random">
+                <button id="dijkstra">Dijkstra</spam></button>
+                <button id="aStar">A*</spam></button>
+                <div class="input">Origem:<input type="number" class="recalculatePath" id="source" value="14"></div>
+                <div class="input">Destino:<input type="number" class="recalculatePath" id="target" value="3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../utils.js"></script>
+    <script src="predefinido.js"></script>
+    <script src="grahamScan.js"></script>
+    <script src="rhill-voronoi-core.js"></script>
+    <script src="dijkstra.js"></script>
+    <script src="aStar.js"></script>
+
+    <script type="text/javascript">
+
+        var CANVAS_WIDTH = 900;
+        var CANVAS_HEIGHT = 400;
+        var CANVAS_MARGIN = 50;
+        var convexHull = null;
+        var voronoiDiagram = null;
+        var shortestPath = null;
+        var graph = null;
+        var activePathFindingAlgorithm = null;
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        canvas.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var myDiv = document.getElementById("myDiv");
+        myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+
+        var params = {};
+        var inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            if (element.type == "checkbox") {
+                element.addEventListener("change", function (e) {
+                    params[element.id] = element.checked;
+                    draw();
+                });
+                params[element.id] = element.checked;
+            } else {
+                element.addEventListener("change", function (e) {
+                    params[element.id] = element.value;
+                });
+                params[element.id] = element.value;
+            }
+        }
+        var refreshCanvas = document.getElementsByClassName("refreshCanvas");
+        for (let i = 0; i < refreshCanvas.length; i++) {
+            refreshCanvas[i].addEventListener("change", () => {
+                draw();
+            });
+        }
+
+        document.getElementById("random").addEventListener("click", () => {
+            randomizePoints();
+            resetSolutions()
+            draw();
+        });
+        document.getElementById("randomCircle").addEventListener("click", () => {
+            randomizePointsInCircle();
+            resetSolutions()
+            draw();
+        });
+        document.getElementById("predefinido").addEventListener("click", () => {
+            points = getPresetPoints(predefinido);
+            resetSolutions()
+            draw();
+        });
+
+        document.getElementById("grahamScan").addEventListener("click", () => {
+            computeGrahamScan()
+            draw();
+        });
+
+        document.getElementById("clearSolution").addEventListener("click", () => {
+            resetSolutions()
+            draw();
+        });
+
+        document.getElementById("voronoi").addEventListener("click", () => {
+            computeVoronoi();
+            draw();
+        });
+
+        document.getElementById("aStar").addEventListener("click", () => {
+            activePathFindingAlgorithm = aStar;
+            computeShortestPath();
+            draw();
+        });
+
+        document.getElementById("dijkstra").addEventListener("click", () => {
+            activePathFindingAlgorithm = dijkstra;
+            computeShortestPath();
+            draw();
+        });
+
+        var recalculatePath = document.getElementsByClassName("recalculatePath");
+        for (let i = 0; i < recalculatePath.length; i++) {
+            recalculatePath[i].addEventListener("change", () => {
+                if (shortestPath) {
+                    computeShortestPath();
+                    draw();
+                }
+            });
+        }
+
+        canvas.addEventListener('click', function (e) {
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left - CANVAS_MARGIN
+            const y = event.clientY - rect.top - CANVAS_MARGIN
+            console.log("mouse click", "(x: " + x + " y: " + y + ")")
+            points.push({ x, y })
+
+            if (convexHull) computeGrahamScan()
+            if (voronoiDiagram) computeVoronoi()
+            if (shortestPath) computeShortestPath()
+
+            draw()
+        })
+
+    </script>
+
+    <script type="text/javascript">
+
+        var points = getPresetPoints(predefinido);
+        draw();
+
+        function computeGrahamScan() {
+            convexHull = grahamScan(points);
+            document.getElementById("grahamScan").innerHTML = "Graham Scan: " + convexHull[0].length + " vértices, " + convexHull[1] + "ms ordenando, " + convexHull[2] + "ms processando, total: " + (convexHull[1] + convexHull[2]) + "ms";
+        }
+
+        function computeVoronoi() {
+            var voronoi = new Voronoi();
+            var bbox = { xl: -CANVAS_MARGIN, xr: CANVAS_WIDTH + CANVAS_MARGIN, yt: -CANVAS_MARGIN, yb: CANVAS_HEIGHT + CANVAS_MARGIN };
+
+            voronoiDiagram = voronoi.compute(points, bbox);
+            graph = buildGraph(voronoiDiagram)
+
+            console.log("voronoiDiagram", voronoiDiagram)
+            document.getElementById("voronoi").innerHTML = "Voronoi (Fortune): " + voronoiDiagram.execTime + "ms"
+        }
+
+        function computeShortestPath() {
+            let { source, target } = params
+            if (graph) {
+                shortestPath = activePathFindingAlgorithm(graph, source, target)
+                console.log("shortestPath", shortestPath)
+                if (activePathFindingAlgorithm == aStar)
+                    document.getElementById("aStar").innerHTML = "A* --> distância:" + formatDecimal(shortestPath.distance, 2) + ", " + shortestPath.time + "ms";
+                else if (activePathFindingAlgorithm == dijkstra)
+                    document.getElementById("dijkstra").innerHTML = "Dijkstra --> distância:" + formatDecimal(shortestPath.distance, 2) + ", " + shortestPath.time + "ms";
+            }
+        }
+
+        function buildGraph(diagram) {
+            for (let i = 0; i < points.length; i++) {
+                points[i].voronoiId = i
+            }
+
+            let graph = { vertices: [] }
+            for (let i = 0; i < diagram.cells.length; i++) {
+                let cell = diagram.cells[i];
+                graph.vertices[cell.site.voronoiId] = cell.site
+                graph.vertices[cell.site.voronoiId].neighbours = {}
+            }
+            for (let i = 0; i < diagram.edges.length; i++) {
+                let aresta = diagram.edges[i]
+                if (!!aresta.lSite && !!aresta.rSite) {
+                    let distance = dist(aresta.lSite, aresta.rSite);
+                    graph.vertices[aresta.lSite.voronoiId].neighbours[aresta.rSite.voronoiId] = distance
+                    graph.vertices[aresta.rSite.voronoiId].neighbours[aresta.lSite.voronoiId] = distance
+                }
+            }
+            return graph
+        }
+
+        function resetSolutions() {
+            convexHull = null;
+            voronoiDiagram = null;
+            shortestPath = null;
+            graph = null;
+        }
+
+        function getPresetPoints(presetPoints) {
+            let copy = [];
+            for (let i = 0; i < presetPoints.length; i++) {
+                copy[i] = {
+                    x: presetPoints[i].x,
+                    y: presetPoints[i].y
+                };
+            }
+            return copy;
+        }
+
+        function randomizePoints() {
+            pointCount = params["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                const x = Math.random(), y = Math.random();
+                points[i] = {
+                    x: x * CANVAS_WIDTH,
+                    y: y * CANVAS_HEIGHT
+                };
+            }
+        }
+
+
+        function randomizePointsInCircle() {
+            pointCount = params["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                let r = Math.sqrt(Math.random())
+                let theta = 2 * Math.PI * Math.random()
+                points[i] = {
+                    x: r * Math.cos(theta),
+                    y: r * Math.sin(theta),
+                    x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
+                    y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
+                }
+            }
+        }
+
+        function drawPoints() {
+            for (var i = 0; i < points.length; i++) {
+                drawPoint(points[i], params["pointColor"], i);
+            }
+        }
+
+        function drawPoint(point, color, i) {
+            let drawX = point.x + CANVAS_MARGIN, drawY = point.y + CANVAS_MARGIN;
+            let { pointRadius, letterSize, numberIdsEnabled, coordinatesEnabled, anglesEnabled } = params;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+
+            if (i != undefined && numberIdsEnabled) {
+                ctx.font = pointRadius * 3 + 'px serif';
+                ctx.fillText(i, drawX + pointRadius * 2, drawY);
+            }
+
+            if (coordinatesEnabled) {
+                drawY += pointRadius * 2.5
+                ctx.font = pointRadius * 1.6 + 'px serif';
+                ctx.fillText("(" + formatDecimal(point.x, 2) + ", " + formatDecimal(point.y, 2) + ")", drawX, drawY);
+            }
+            if (anglesEnabled && point.angle != null) {
+                ctx.font = pointRadius * 1.6 + 'px serif';
+                ctx.fillText(formatDecimal(point.angle, 2) + "°", drawX, drawY + pointRadius * 2.5);
+            }
+        }
+
+        function drawLine(p0, p1, width, color) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x + CANVAS_MARGIN, p0.y + CANVAS_MARGIN);
+            ctx.lineTo(p1.x + CANVAS_MARGIN, p1.y + CANVAS_MARGIN);
+            ctx.lineWidth = width;
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawConvexHull(solution) {
+            let { convexHullColor, convexHullWidth, convexHullEnabled } = params;
+            if (convexHullEnabled) {
+                for (let i = 0; i < solution.length; i++) {
+                    drawPoint(solution[i], convexHullColor);
+                    drawLine(solution[i], solution[(i + 1) % solution.length], convexHullWidth, convexHullColor)
+                }
+            }
+        }
+
+        function drawGraph(diagram) {
+            let { graphColor, graphEnabled, graphWidth } = params;
+            if (graphEnabled) {
+                for (let i = 0; i < diagram.edges.length; i++) {
+                    let aresta = diagram.edges[i]
+                    if (!!aresta.lSite && !!aresta.rSite)
+                        drawLine(aresta.lSite, aresta.rSite, graphWidth, graphColor)
+                }
+            }
+        }
+
+        function drawVoronoiDiagram(diagram) {
+            let { voronoiColor, voronoiEnabled, voronoiWidth } = params;
+
+            if (voronoiEnabled) {
+                for (let i = 0; i < diagram.edges.length; i++) {
+                    let aresta = diagram.edges[i]
+                    if (!!aresta.lSite && !!aresta.rSite)
+                        drawLine(aresta.va, aresta.vb, voronoiWidth, voronoiColor)
+                }
+            }
+        }
+
+        function drawShortestPath(path) {
+            let { pathColor, pathEnabled, pathWidth } = params;
+            if (pathEnabled)
+                for (let i = 0; i < path.length - 1; i++)
+                    drawLine(graph.vertices[path[i]], graph.vertices[path[i + 1]], pathWidth, pathColor)
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (voronoiDiagram)
+                drawVoronoiDiagram(voronoiDiagram)
+            if (graph)
+                drawGraph(voronoiDiagram)
+            if (params["pointsEnabled"])
+                drawPoints();
+            if (convexHull)
+                drawConvexHull(convexHull[0]);
+            if (shortestPath)
+                drawShortestPath(shortestPath.path)
+        }
+
+    </script>
+
+</body>
+
+</html>

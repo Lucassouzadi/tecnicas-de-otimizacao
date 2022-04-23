@@ -4,7 +4,7 @@ function dist(p0, p1) {
 }
 
 // return distance between the line p1_p2 and the point p
-function dist(p0, p1, p) {
+function distLine(p0, p1, p) {
     return ((p1.x - p0.x) * (p0.y - p.y) - (p0.x - p.x) * (p1.y - p0.y)) / Math.sqrt(Math.pow(p1.x - p0.x, 2) + Math.pow(p1.y - p0.y, 2))
 }
 
@@ -48,15 +48,16 @@ function ccw(p1, p2, p3) {
         - (p2.y - p1.y) * (p3.x - p1.x);
 }
 
-function polarAngle(p) {
+function polarAngle(vec) {
     let angle;
-    if (p.x == 0)
+    if (vec.x == 0)
         angle = 0
     else
-        angle = Math.atan(p.y / p.x) * 180 / Math.PI;
-    if (angle < 0) {
+        angle = Math.atan(vec.y / vec.x) * 180 / Math.PI;
+
+    if (angle < 0)
         angle = 180 + angle
-    }
+
     return angle;
 }
 
