@@ -54,7 +54,6 @@
             <div class="input">Número de pontos: <input type="number" id="pointCount" value="50"></div>
         </div>
         <button id="predefinido">Predefinido</button>
-        <button id="predefinidoBugado">Predefinido que estraga o D&Q Melhorado</button>
         <button id="clearSolution">Limpa Solução</spam></button>
         <div id="algorithms">
             <button id="bruteForce">Força Bruta</spam></button>
@@ -120,11 +119,6 @@
             activeSolution = null;
             draw();
         });
-        document.getElementById("predefinidoBugado").addEventListener("click", () => {
-            points = getPresetPoints(predefinidoBugado);
-            activeSolution = null;
-            draw();
-        });
         document.getElementById("clearSolution").addEventListener("click", () => {
             activeSolution = null;
             draw();
@@ -170,15 +164,12 @@
         }
 
         function randomizePoints() {
-            //let pointsString = "";
             pointCount = params["pointCount"];
             points = [];
             for (let i = 0; i < pointCount; i++) {
                 let x = Math.random(), y = Math.random();
                 points[i] = { x: x * CANVAS_WIDTH, y: y * CANVAS_HEIGHT };
-                //pointsString += `{x:${x}, y:${y}},\n`;
             }
-            //console.log(pointsString.substring(0, pointsString.length - 2))
         }
 
         function drawPoints() {

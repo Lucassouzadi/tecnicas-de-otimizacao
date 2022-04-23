@@ -60,8 +60,8 @@ function divideAndConquer_withoutCounters(P, i, n, s0, s1, bruteForceAdaptado) {
     if (partitionSize == 2) return [P[i], P[n], dist(P[i], P[n])];
 
     let half = (s0 + s1) / 2;
-    let m = 0;
 
+    let m = 0;
     for (m = i; m + 1 <= n && P[m + 1].x < half; m++) { }
 
     let closestP1 = divideAndConquer(P, i, m, s0, half, bruteForceAdaptado);
@@ -69,15 +69,15 @@ function divideAndConquer_withoutCounters(P, i, n, s0, s1, bruteForceAdaptado) {
 
     let closest = closestP1[2] < closestP2[2] ? closestP1 : closestP2;
 
-    let P2Remainder, P3Remainder, closestP3;
+    let P1Remainder, P2Remainder, closestP3;
 
-    for (P2Remainder = 0; m - 1 - P2Remainder >= i && half - P[m - 1 - P2Remainder].x < closest[2]; P2Remainder++) { }
-    for (P3Remainder = 0; m + 1 + P3Remainder <= n && P[m + 1 + P3Remainder].x - half < closest[2]; P3Remainder++) { }
+    for (P1Remainder = 0; m - 1 - P1Remainder >= i && half - P[m - 1 - P1Remainder].x < closest[2]; P1Remainder++) { }
+    for (P2Remainder = 0; m + 1 + P2Remainder <= n && P[m + 1 + P2Remainder].x - half < closest[2]; P2Remainder++) { }
 
     if (bruteForceAdaptado)
-        closestP3 = bruteForceAdaptadoDD(P, m - P2Remainder, m, m + P3Remainder);
+        closestP3 = bruteForceAdaptadoDD(P, m - P1Remainder, m, m + P2Remainder);
     else
-        closestP3 = bruteForceMelhorado(P, m - P2Remainder, m + P3Remainder);
+        closestP3 = bruteForceMelhorado(P, m - P1Remainder, m + P2Remainder);
 
     closest = closestP3[2] < closest[2] ? closestP3 : closest;
 

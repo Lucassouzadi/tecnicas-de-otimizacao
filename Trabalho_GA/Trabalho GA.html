@@ -70,9 +70,9 @@
             <div>Habilita pontos<input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
             <div>Habilita números dos pontos<input type="checkbox" id="numberIdsEnabled" class="refreshCanvas" checked>
             </div>
-            <div>Habilita convex hull<input type="checkbox" id="convexHullEnabled" class="refreshCanvas" checked></div>
             <div>Habilita coordenadas<input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
             <div>Habilita ângulos<input type="checkbox" id="anglesEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita convex hull<input type="checkbox" id="convexHullEnabled" class="refreshCanvas" checked></div>
             <div>Habilita diagrama de Voronoi<input type="checkbox" id="voronoiEnabled" class="refreshCanvas" checked>
             </div>
             <div>Habilita caminho mais curto<input type="checkbox" id="pathEnabled" class="refreshCanvas" checked></div>
@@ -261,9 +261,11 @@
             var bbox = { xl: -CANVAS_MARGIN, xr: CANVAS_WIDTH + CANVAS_MARGIN, yt: -CANVAS_MARGIN, yb: CANVAS_HEIGHT + CANVAS_MARGIN };
 
             voronoiDiagram = voronoi.compute(points, bbox);
-            graph = buildGraph(voronoiDiagram)
-
             console.log("voronoiDiagram", voronoiDiagram)
+
+            graph = buildGraph(voronoiDiagram)
+            console.log("graph", graph)
+
             document.getElementById("voronoi").innerHTML = "Voronoi (Fortune): " + voronoiDiagram.execTime + "ms"
         }
 
@@ -285,6 +287,7 @@
             }
 
             let graph = { vertices: [] }
+
             for (let i = 0; i < diagram.cells.length; i++) {
                 let cell = diagram.cells[i];
                 graph.vertices[cell.site.voronoiId] = cell.site
