@@ -1,0 +1,326 @@
+<html>
+
+<head>
+    <title>Trabalho GB</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #algorithms {
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #div-random {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #div-random button {
+            width: 100%;
+        }
+
+        #div-random div {
+            flex-shrink: 0;
+        }
+
+        canvas {
+            background: #eee;
+        }
+
+        strong {
+            font-size: 20px;
+        }
+
+        #enableOptions {
+            width: 30%;
+            background-color: #5dbe60;
+            color: white;
+        }
+
+        button {
+            background-color: #e7e7e7;
+            color: black;
+            border: none;
+            padding: 1.5px 0;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<script src="../header.js" type="text/javascript" defer></script>
+
+<body>
+    <div id="myDiv">
+        <div id="header"></div>
+        <canvas id="myCanvas"></canvas>
+        <strong>Clique no canvas para adicionar pontos extras</strong>
+        <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
+        <div id="options">
+            <div>Habilita pontos<input type="checkbox" id="pointsEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita números dos pontos<input type="checkbox" id="numberIdsEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita coordenadas<input type="checkbox" id="coordinatesEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita ângulos<input type="checkbox" id="anglesEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita contorno<input type="checkbox" id="outlineEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita triangulos<input type="checkbox" id="trianglesEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Raio dos pontos:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
+            <div>Largura da contorno:<input type="number" id="outlineWidth" class="refreshCanvas" value="4">
+            </div>
+            <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
+            <div>Cor do contorno:<input type="text" id="outlineColor" class="refreshCanvas" value="#6317cf">
+            </div>
+        </div>
+        <div id="div-random">
+            <button id="random">Random</button>
+            <div class="input">Número de pontos:<input type="number" id="pointCount" value="30"></div>
+        </div>
+        <button id="randomCircle">Random (círculo)</button>
+        <button id="predefinido">Predefinido</button>
+        <button id="clearSolution">Limpa Solução</spam></button>
+        <div id="algorithms">
+            <button id="earClipping">Ear clipping</spam></button>
+        </div>
+    </div>
+
+    <script src="../utils.js"></script>
+    <script src="predefinido.js"></script>
+    <script src="triangulation.js"></script>
+
+    <script type="text/javascript">
+
+        var CANVAS_WIDTH = 1000;
+        var CANVAS_HEIGHT = 500;
+        var CANVAS_MARGIN = 50;
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        canvas.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var myDiv = document.getElementById("myDiv");
+        myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        myDiv.style.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var options = {};
+        var inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            if (element.type == "checkbox") {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.checked;
+                    draw();
+                });
+                options[element.id] = element.checked;
+            } else {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.value;
+                });
+                options[element.id] = element.value;
+            }
+        }
+        var refreshCanvas = document.getElementsByClassName("refreshCanvas");
+        for (let i = 0; i < refreshCanvas.length; i++) {
+            refreshCanvas[i].addEventListener("change", () => {
+                draw();
+            });
+        }
+
+        document.getElementById("random").addEventListener("click", () => {
+            randomizePoints();
+            resetSolution()
+            draw();
+        });
+        document.getElementById("randomCircle").addEventListener("click", () => {
+            randomizePointsInCircle();
+            resetSolution()
+            draw();
+        });
+        document.getElementById("predefinido").addEventListener("click", () => {
+            points = getPresetPoints(predefinido);
+            resetSolution()
+            draw();
+        });
+
+        document.getElementById("clearSolution").addEventListener("click", () => {
+            resetSolution()
+            draw();
+        });
+
+        document.getElementById("earClipping").addEventListener("click", () => {
+            triangles = triangulation(points);
+            draw();
+        });
+
+        document.getElementById("enableOptions").addEventListener("click", () => {
+            let optionsElem = document.getElementById("options")
+            let enableOptionsButton = document.getElementById("enableOptions")
+            if (optionsElem.style.display == 'none') {
+                enableOptionsButton.innerHTML = '<strong>˄</strong> Esconder opções <strong>˄</strong>'
+                optionsElem.style.display = 'block'
+            }
+            else {
+                enableOptionsButton.innerHTML = '<strong>˅</strong> Mostrar opções <strong>˅</strong>'
+                optionsElem.style.display = 'none'
+            }
+        });
+
+        canvas.addEventListener('click', function (e) {
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left - CANVAS_MARGIN
+            const y = -event.clientY + rect.top + CANVAS_HEIGHT + CANVAS_MARGIN
+            console.log("mouse click", "(x: " + x + " y: " + y + ")")
+            points.push({ x, y })
+
+            draw()
+        })
+
+    </script>
+    <script type="text/javascript">
+
+        function resetSolution() {
+            triangles = []
+        }
+
+        function getPresetPoints(presetPoints) {
+            let copy = [];
+            for (let i = 0; i < presetPoints.length; i++) {
+                copy[i] = {
+                    x: presetPoints[i].x,
+                    y: presetPoints[i].y
+                };
+            }
+            return copy;
+        }
+
+        function randomizePoints() {
+            pointCount = options["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                const x = Math.random(), y = Math.random();
+                points[i] = {
+                    x: x * CANVAS_WIDTH,
+                    y: y * CANVAS_HEIGHT
+                };
+            }
+        }
+
+        function randomizePointsInCircle() {
+            pointCount = options["pointCount"];
+            points = [];
+            for (let i = 0; i < pointCount; i++) {
+                let r = Math.sqrt(Math.random())
+                let theta = 2 * Math.PI * Math.random()
+                points[i] = {
+                    x: r * Math.cos(theta),
+                    y: r * Math.sin(theta),
+                    x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
+                    y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
+                }
+            }
+        }
+
+        function drawPoint(point, color, i) {
+            let drawX = point.x + CANVAS_MARGIN, drawY = CANVAS_HEIGHT - point.y + CANVAS_MARGIN;
+            let { pointRadius, numberIdsEnabled, coordinatesEnabled, anglesEnabled } = options;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+
+            if (i != undefined && numberIdsEnabled) {
+                ctx.font = pointRadius * 3 + 'px serif';
+                ctx.fillText(i, drawX + pointRadius * 2, drawY);
+            }
+
+            if (coordinatesEnabled) {
+                drawY += pointRadius * 2.5
+                ctx.font = pointRadius * 1.6 + 'px serif';
+                ctx.fillText("(" + formatDecimal(point.x, 2) + ", " + formatDecimal(point.y, 2) + ")", drawX, drawY);
+            }
+            if (anglesEnabled && point.angle != null) {
+                ctx.font = pointRadius * 1.6 + 'px serif';
+                ctx.fillText(formatDecimal(point.angle, 2) + "°", drawX, drawY + pointRadius * 2.5);
+            }
+        }
+
+        function drawLine(p0, p1, width, color) {
+            ctx.beginPath();
+            ctx.moveTo(p0.x + CANVAS_MARGIN, CANVAS_HEIGHT - p0.y + CANVAS_MARGIN);
+            ctx.lineTo(p1.x + CANVAS_MARGIN, CANVAS_HEIGHT - p1.y + CANVAS_MARGIN);
+            ctx.lineWidth = width;
+            ctx.strokeStyle = color;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawTriangle(triangle, color) {
+            console.log(color)
+            var p0 = points[triangle[0]]
+            var p1 = points[triangle[1]]
+            var p2 = points[triangle[2]]
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(CANVAS_MARGIN + p0.x, CANVAS_MARGIN + CANVAS_HEIGHT - p0.y);
+            ctx.lineTo(CANVAS_MARGIN + p1.x, CANVAS_MARGIN + CANVAS_HEIGHT - p1.y);
+            ctx.lineTo(CANVAS_MARGIN + p2.x, CANVAS_MARGIN + CANVAS_HEIGHT - p2.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawPoints() {
+            for (var i = 0; i < points.length; i++) {
+                drawPoint(points[i], options["pointColor"], i);
+            }
+        }
+
+        function drawOutline() {
+            let { outlineColor, outlineWidth } = options;
+            for (let i = 0; i < points.length - 1; i++)
+                drawLine(points[i], points[i + 1], outlineWidth, outlineColor)
+            drawLine(points[points.length - 1], points[0], outlineWidth, outlineColor)
+        }
+
+        function drawTriangles() {
+            let { outlineColor, outlineWidth } = options;
+            debugger;
+            for (let i = 0; i < triangles.length; i++) {
+                drawTriangle(triangles[i], '#' + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + 5)
+            }
+        }
+
+        function draw() {
+            let { pointsEnabled, outlineEnabled, trianglesEnabled } = options;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (pointsEnabled)
+                drawPoints();
+            if (outlineEnabled)
+                drawOutline();
+            if (trianglesEnabled)
+                drawTriangles();
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        var triangles = [[0, 1, 2], [2, 3, 4]];
+        var points = getPresetPoints(predefinido);
+        draw();
+    </script>
+
+</body>
+
+</html>
