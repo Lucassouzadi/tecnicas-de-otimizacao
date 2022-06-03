@@ -1,5 +1,3 @@
-// Dummy
-
 function triangulationSetup(P) {
 
     let reflexive = [];
@@ -77,7 +75,7 @@ function isEar(P, active, p) {
     for (let j = 0; isEar && j < active.length; j++) {
         let tested = active[j];
         if (tested == p0 || tested == p1 || tested == p2) continue;
-        isEar = !pointInTriangle(P[p0], P[p1], P[p2], P[tested])
+        isEar = clockwise ? !pointInTriangle(P[p2], P[p1], P[p0], P[tested]) : !pointInTriangle(P[p0], P[p1], P[p2], P[tested])
     }
     return isEar;
 }
@@ -87,7 +85,7 @@ function isConvex(P, active, p) {
     const p0 = active[(indexOfP - 1 + active.length) % active.length];
     const p1 = p;
     const p2 = active[(indexOfP + 1) % active.length];
-    return isAngleConvex(P[p0], P[p1], P[p2])
+    return clockwise ? isAngleConvex(P[p2], P[p1], P[p0]) : isAngleConvex(P[p0], P[p1], P[p2])
 }
 
 function addOrdered(array, elem) {
