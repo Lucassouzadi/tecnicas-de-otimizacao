@@ -67,5 +67,22 @@ function isAngleConvex(p0, p1, p2) {
     let dx2 = p2.x - p1.x
     let dy2 = p2.y - p1.y
     let crossProductZ = dx1 * dy2 - dy1 * dx2
-    return crossProductZ < 0.0;
+    return crossProductZ > 0.0;
+}
+
+function dot(v1, v2) {
+    return v1.x * v2.x + v1.y * v2.y
+}
+
+function pointInTriangle(p1, p2, p3, p) {
+    const v1 = { x: p2.y - p1.y, y: -p2.x + p1.x }  //  left-orthogonal to p1-->p2
+    const v2 = { x: p3.y - p2.y, y: -p3.x + p2.x }  //  left-orthogonal to p2-->p3
+    const v3 = { x: p1.y - p3.y, y: -p1.x + p3.x }  //  left-orthogonal to p3-->p1
+    const v1_ = { x: p.x - p1.x, y: p.y - p1.y }    //  p1-->p
+    const v2_ = { x: p.x - p2.x, y: p.y - p2.y }    //  p2-->p
+    const v3_ = { x: p.x - p3.x, y: p.y - p3.y }    //  p3-->p
+    var dot1 = dot(v1, v1_)
+    var dot2 = dot(v2, v2_)
+    var dot3 = dot(v3, v3_)
+    return 0 >= dot1 && 0 >= dot2 && 0 >= dot3
 }

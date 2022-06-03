@@ -18,7 +18,7 @@ function grahamScan(P) {
     let p0 = 0, p1 = 1, p2 = 2
 
     while (p2 < P.length) {
-        if (isAngleConvex(P[p0], P[p1], P[p2])) {
+        if (isAngleConvex(P[p2], P[p1], P[p0])) {
             p0 = p1
             p1 = p2
             solution.push(p2++)

@@ -16,18 +16,6 @@
             flex-direction: column;
         }
 
-        #div-random {
-            display: flex;
-            flex-direction: row;
-        }
-
-        #div-random button {
-            width: 100%;
-        }
-
-        #div-random div {
-            flex-shrink: 0;
-        }
 
         canvas {
             background: #eee;
@@ -76,6 +64,8 @@
             </div>
             <div>Habilita triangulos<input type="checkbox" id="trianglesEnabled" class="refreshCanvas" checked>
             </div>
+            <div>Habilita listas<input type="checkbox" id="setsEnabled" class="refreshCanvas" checked>
+            </div>
             <div>Raio dos pontos:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
             <div>Largura da contorno:<input type="number" id="outlineWidth" class="refreshCanvas" value="4">
             </div>
@@ -83,15 +73,13 @@
             <div>Cor do contorno:<input type="text" id="outlineColor" class="refreshCanvas" value="#6317cf">
             </div>
         </div>
-        <div id="div-random">
-            <button id="random">Random</button>
-            <div class="input">Número de pontos:<input type="number" id="pointCount" value="30"></div>
-        </div>
-        <button id="randomCircle">Random (círculo)</button>
         <button id="predefinido">Predefinido</button>
-        <button id="clearSolution">Limpa Solução</spam></button>
+        <button id="clearSolution">Limpa</spam></button>
+        <button id="resetPoints">Apaga pontos</spam></button>
         <div id="algorithms">
-            <button id="earClipping">Ear clipping</spam></button>
+            <button id="earClippingSetup">Ear clipping setup</spam></button>
+            <button id="earClippingStepByStep">Ear clipping run</spam></button>
+            <button id="earClippingStep">Ear clipping step by step ></spam></button>
         </div>
     </div>
 
@@ -138,16 +126,6 @@
             });
         }
 
-        document.getElementById("random").addEventListener("click", () => {
-            randomizePoints();
-            resetSolution()
-            draw();
-        });
-        document.getElementById("randomCircle").addEventListener("click", () => {
-            randomizePointsInCircle();
-            resetSolution()
-            draw();
-        });
         document.getElementById("predefinido").addEventListener("click", () => {
             points = getPresetPoints(predefinido);
             resetSolution()
@@ -159,8 +137,27 @@
             draw();
         });
 
-        document.getElementById("earClipping").addEventListener("click", () => {
-            triangles = triangulation(points);
+        document.getElementById("resetPoints").addEventListener("click", () => {
+            resetSolution()
+            points = []
+            draw();
+        });
+
+        document.getElementById("earClippingSetup").addEventListener("click", () => {
+            [convex, reflexive, ear, activePoints] = triangulationSetup(points);
+            triangles = []
+            draw();
+        });
+
+        document.getElementById("earClippingStepByStep").addEventListener("click", () => {
+            while (!finished()) {
+                triangulationStep(points, activePoints, convex, reflexive, ear, triangles);
+            }
+            draw();
+        });
+
+        document.getElementById("earClippingStep").addEventListener("click", () => {
+            triangulationStep(points, activePoints, convex, reflexive, ear, triangles);
             draw();
         });
 
@@ -182,7 +179,8 @@
             const x = event.clientX - rect.left - CANVAS_MARGIN
             const y = -event.clientY + rect.top + CANVAS_HEIGHT + CANVAS_MARGIN
             console.log("mouse click", "(x: " + x + " y: " + y + ")")
-            points.push({ x, y })
+            if (finished())
+                points.push({ x, y })
 
             draw()
         })
@@ -191,7 +189,11 @@
     <script type="text/javascript">
 
         function resetSolution() {
-            triangles = []
+            triangles = [];
+            reflexive = [];
+            convex = [];
+            ear = [];
+            activePoints = [];
         }
 
         function getPresetPoints(presetPoints) {
@@ -205,31 +207,8 @@
             return copy;
         }
 
-        function randomizePoints() {
-            pointCount = options["pointCount"];
-            points = [];
-            for (let i = 0; i < pointCount; i++) {
-                const x = Math.random(), y = Math.random();
-                points[i] = {
-                    x: x * CANVAS_WIDTH,
-                    y: y * CANVAS_HEIGHT
-                };
-            }
-        }
-
-        function randomizePointsInCircle() {
-            pointCount = options["pointCount"];
-            points = [];
-            for (let i = 0; i < pointCount; i++) {
-                let r = Math.sqrt(Math.random())
-                let theta = 2 * Math.PI * Math.random()
-                points[i] = {
-                    x: r * Math.cos(theta),
-                    y: r * Math.sin(theta),
-                    x: r * Math.cos(theta) * CANVAS_WIDTH / 2 + CANVAS_WIDTH / 2,
-                    y: r * Math.sin(theta) * CANVAS_HEIGHT / 2 + CANVAS_HEIGHT / 2
-                }
-            }
+        function finished() {
+            return activePoints.length < 3
         }
 
         function drawPoint(point, color, i) {
@@ -268,7 +247,6 @@
         }
 
         function drawTriangle(triangle, color) {
-            console.log(color)
             var p0 = points[triangle[0]]
             var p1 = points[triangle[1]]
             var p2 = points[triangle[2]]
@@ -289,21 +267,35 @@
 
         function drawOutline() {
             let { outlineColor, outlineWidth } = options;
-            for (let i = 0; i < points.length - 1; i++)
-                drawLine(points[i], points[i + 1], outlineWidth, outlineColor)
-            drawLine(points[points.length - 1], points[0], outlineWidth, outlineColor)
+            if (points.length > 0) {
+                for (let i = 0; i < points.length - 1; i++)
+                    drawLine(points[i], points[i + 1], outlineWidth, outlineColor)
+                drawLine(points[points.length - 1], points[0], outlineWidth, outlineColor)
+            }
         }
 
         function drawTriangles() {
             let { outlineColor, outlineWidth } = options;
-            debugger;
             for (let i = 0; i < triangles.length; i++) {
-                drawTriangle(triangles[i], '#' + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + 5)
+                let randomColor = '#' + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + 5
+                drawTriangle(triangles[i], randomColor)
             }
         }
 
+        function drawSets() {
+            let { pointRadius, pointColor } = options;
+
+            ctx.font = pointRadius * 3 + 'px serif';
+            ctx.fillStyle = pointColor;
+            ctx.fillText(`A={${activePoints}}`, CANVAS_MARGIN, CANVAS_MARGIN);
+            ctx.fillText(`C={${convex}}`, CANVAS_MARGIN, CANVAS_MARGIN + pointRadius * 4);
+            ctx.fillText(`R={${reflexive}}`, CANVAS_MARGIN, CANVAS_MARGIN + pointRadius * 8);
+            ctx.fillText(`E={${ear}}`, CANVAS_MARGIN, CANVAS_MARGIN + pointRadius * 12);
+
+        }
+
         function draw() {
-            let { pointsEnabled, outlineEnabled, trianglesEnabled } = options;
+            let { pointsEnabled, outlineEnabled, trianglesEnabled, setsEnabled } = options;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (pointsEnabled)
                 drawPoints();
@@ -311,13 +303,19 @@
                 drawOutline();
             if (trianglesEnabled)
                 drawTriangles();
+            if (setsEnabled)
+                drawSets();
         }
 
     </script>
 
     <script type="text/javascript">
-        var triangles = [[0, 1, 2], [2, 3, 4]];
+        var triangles = [];
+        var reflexive = [];
+        var convex = [];
+        var ear = [];
         var points = getPresetPoints(predefinido);
+        var activePoints = [];
         draw();
     </script>
 
