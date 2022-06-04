@@ -1,0 +1,197 @@
+<html>
+
+<head>
+    <title>Ear clipping</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #algorithms {
+            padding-top: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        canvas {
+            background: #eee;
+        }
+
+        strong {
+            font-size: 20px;
+        }
+
+        #enableOptions {
+            width: 30%;
+            background-color: #5dbe60;
+            color: white;
+        }
+
+        button {
+            background-color: #e7e7e7;
+            color: black;
+            border: none;
+            padding: 1.5px 0;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        #polygonOrientation {
+            font-size: 24px;
+        }
+
+        #polygonOrientation p {
+            margin: 0;
+        }
+
+        #polygonOrientation p strong {
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<script src="../header.js" type="text/javascript" defer></script>
+
+<body>
+    <div id="myDiv">
+        <div id="header"></div>
+        <canvas id="myCanvas"></canvas>
+        <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
+        <div id="options">
+            <div>Habilita nomes dos nodos<input type="checkbox" id="nodeIdEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Tamanho do menor nodo:<input type="number" id="cellSize" class="refreshCanvas" value="50"> </div>
+            <div>Tamanho nos nomes dos nodos:<input type="number" id="nodeIdSize" class="refreshCanvas" value="25">
+            </div>
+            <div>Offset entre nívels:<input type="number" id="layerOffset" class="refreshCanvas" value="190"> </div>
+            <div>Profundidade da árvore:<input type="number" id="treeDeepness" class="refreshCanvas" value="3"> </div>
+        </div>
+    </div>
+
+    <script src="../utils.js"></script>
+    <script src="quad_matrix.js"></script>
+
+    <script type="text/javascript">
+
+        var CANVAS_WIDTH = 1000;
+        var CANVAS_HEIGHT = 800;
+        var CANVAS_MARGIN = 30;
+
+        const canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        canvas.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        const myDiv = document.getElementById("myDiv");
+        myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        myDiv.style.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        const options = {};
+        const inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            if (element.type == "checkbox") {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.checked;
+                    draw();
+                });
+                options[element.id] = element.checked;
+            } else {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.value;
+                });
+                options[element.id] = element.value;
+            }
+        }
+        const refreshCanvas = document.getElementsByClassName("refreshCanvas");
+        for (let i = 0; i < refreshCanvas.length; i++) {
+            refreshCanvas[i].addEventListener("change", () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                draw();
+            });
+        }
+
+        document.getElementById("enableOptions").addEventListener("click", () => {
+            let optionsElem = document.getElementById("options")
+            let enableOptionsButton = document.getElementById("enableOptions")
+            if (optionsElem.style.display == 'none') {
+                enableOptionsButton.innerHTML = '<strong>˄</strong> Esconder opções <strong>˄</strong>'
+                optionsElem.style.display = 'block'
+            }
+            else {
+                enableOptionsButton.innerHTML = '<strong>˅</strong> Mostrar opções <strong>˅</strong>'
+                optionsElem.style.display = 'none'
+            }
+        });
+
+
+    </script>
+    <script type="text/javascript">
+
+        function resetSolution() {
+            tree = {};
+        }
+
+        function drawNode(nodeId, currentRow, currentColumn, length, depth) {
+            let { cellSize, layerOffset, nodeIdSize, nodeIdEnabled } = options
+
+            cellSize = Number(cellSize)
+
+            const nodeSize = length * cellSize
+
+            const nodeX = CANVAS_MARGIN
+                + nodeSize * (currentRow / length)
+                + layerOffset * (depth - 1)
+
+                const nodeY = CANVAS_MARGIN
+                + nodeSize * (currentColumn / length)
+                + layerOffset * (depth - 1)
+
+
+            let randomColor = '#' + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + "" + Math.floor(Math.random() * 10) + 5
+            ctx.fillStyle = randomColor;
+            ctx.strokeStyle = randomColor;
+
+            ctx.beginPath();
+            ctx.moveTo(nodeX, nodeY);
+            ctx.lineTo(nodeX + nodeSize, nodeY);
+            ctx.lineTo(nodeX + nodeSize, nodeY + nodeSize);
+            ctx.lineTo(nodeX, nodeY + nodeSize);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (nodeIdEnabled) {
+                ctx.fillStyle = "#1117";
+                var fontSize = Number(nodeIdSize)
+                ctx.font = fontSize + 'px serif';
+                ctx.fillText(nodeId, nodeY, nodeX + fontSize);
+            }
+        }
+
+        function draw() {
+            const tree = generateQuadTree(options['treeDeepness']);
+            const callback = (id, currentRow, currentColumn, length, depth) => {
+                drawNode(id, currentRow, currentColumn, length, depth)
+            }
+            const matrix = quadtreeToMatrix(tree, callback)
+            console.log(matrix);
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        draw()
+    </script>
+
+</body>
+
+</html>
