@@ -1,0 +1,287 @@
+<html>
+
+<head>
+    <title>Portal culling</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <style type="text/css">
+        #myDiv {
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            background: #eee;
+        }
+
+        strong {
+            font-size: 20px;
+        }
+
+        #enableOptions {
+            width: 30%;
+            background-color: #5dbe60;
+            color: white;
+            border: none;
+            padding: 1.5px 0;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<script src="../header.js" type="text/javascript" defer></script>
+
+<body>
+    <div id="myDiv">
+        <div id="header"></div>
+        <canvas id="myCanvas"></canvas>
+        <div>Sala atual:
+            <select id="currentRoom" class="runPortalCulling">
+                <option value="A" selected>A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+                <option value="E">E</option>
+            </select>
+        </div>
+        <div>Posição da câmera X:
+            <input type="number" id="cameraX" class="runPortalCulling" min="0" max="1000">
+        </div>
+        <div>Posição da câmera Y:
+            <input type="number" id="cameraY" class="runPortalCulling" min="0" max="500">
+        </div>
+        <div>Direção da câmera (graus):
+            <input type="number" id="cameraDirectionDegrees" class="runPortalCulling" value="45">
+        </div>
+        <div>FOV (graus):
+            <input type="number" id="cameraFovDegrees" class="runPortalCulling" value="75">
+        </div>
+        <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
+        <div id="options">
+            <div>Habilita camera<input type="checkbox" id="cameraEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita cores das salas<input type="checkbox" id="roomColorEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita nomes das salas<input type="checkbox" id="roomNameEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Raio do ponto:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
+            <div>Tamanho do nome das salas:<input type="number" id="roomNameSize" class="refreshCanvas" value="36">
+            </div>
+            <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
+            <div>Cor das paredes:<input type="text" id="wallColor" class="refreshCanvas" value="#000000"> </div>
+            <div>Cor do Frustum:<input type="text" id="frustumColor" class="refreshCanvas" value="#6317CF30"> </div>
+            <div>Distância de visão<input type="text" id="viewDistance" class="refreshCanvas" value="5000" disabled>
+            </div>
+        </div>
+    </div>
+
+    <script src="../utils.js"></script>
+    <script src="presetScene.js"></script>
+    <script src="portalCulling.js"></script>
+
+    <script type="text/javascript">
+
+        var CANVAS_WIDTH = 1000;
+        var CANVAS_HEIGHT = 500;
+        var CANVAS_MARGIN = 50;
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        canvas.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var myDiv = document.getElementById("myDiv");
+        myDiv.style.width = CANVAS_WIDTH + CANVAS_MARGIN * 2;
+        myDiv.style.height = CANVAS_HEIGHT + CANVAS_MARGIN * 2;
+
+        var options = {};
+        var inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            let element = inputs[i];
+            if (element.type == "checkbox") {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.checked;
+                });
+                options[element.id] = element.checked;
+            } else {
+                element.addEventListener("change", function (e) {
+                    options[element.id] = element.value;
+                });
+                options[element.id] = element.value;
+            }
+        }
+
+        document.getElementById("currentRoom").addEventListener("change", () => {
+            let currentRoom = document.getElementById("currentRoom").value;
+            camera.currentRoom = currentRoom;
+            camera.position = getRoomCenter(scene, currentRoom)
+            document.getElementById("cameraX").value = camera.position.x
+            document.getElementById("cameraY").value = camera.position.y
+        });
+
+        document.getElementById("cameraX").addEventListener("change", () => {
+            camera.position.x = Number(document.getElementById("cameraX").value)
+        });
+
+        document.getElementById("cameraY").addEventListener("change", () => {
+            camera.position.x = Number(document.getElementById("cameraY").value)
+        });
+
+        document.getElementById("cameraDirectionDegrees").addEventListener("change", () => {
+            camera.directionAngle = Number(document.getElementById("cameraDirectionDegrees").value)
+        });
+
+        document.getElementById("cameraFovDegrees").addEventListener("change", () => {
+            camera.fov = Number(document.getElementById("cameraFovDegrees").value)
+        });
+
+        var refreshCanvas = document.getElementsByClassName("refreshCanvas");
+        for (let i = 0; i < refreshCanvas.length; i++) {
+            refreshCanvas[i].addEventListener("change", () => {
+                draw();
+            });
+        }
+
+        var runPortalCulling = document.getElementsByClassName("runPortalCulling");
+        for (let i = 0; i < runPortalCulling.length; i++) {
+            runPortalCulling[i].addEventListener("change", () => {
+                portalCulling(scene, camera)
+                draw();
+            });
+        }
+
+        document.getElementById("enableOptions").addEventListener("click", () => {
+            let optionsElem = document.getElementById("options")
+            let enableOptionsButton = document.getElementById("enableOptions")
+            if (optionsElem.style.display == 'none') {
+                enableOptionsButton.innerHTML = '<strong>˄</strong> Esconder opções <strong>˄</strong>'
+                optionsElem.style.display = 'block'
+            }
+            else {
+                enableOptionsButton.innerHTML = '<strong>˅</strong> Mostrar opções <strong>˅</strong>'
+                optionsElem.style.display = 'none'
+            }
+        });
+
+        canvas.addEventListener('click', function (e) {
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left - CANVAS_MARGIN
+            const y = -event.clientY + rect.top + CANVAS_HEIGHT + CANVAS_MARGIN
+            console.log("mouse click", "(x: " + x + " y: " + y + ")")
+        })
+
+    </script>
+    <script type="text/javascript">
+
+        function drawPoint(point, color) {
+            let drawX = point.x + CANVAS_MARGIN, drawY = CANVAS_HEIGHT - point.y + CANVAS_MARGIN;
+            let { pointRadius } = options;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawCamera() {
+            let { pointRadius, pointColor, viewDistance } = options;
+
+            drawPoint(camera.position, options["pointColor"]);
+            drawFrustum(camera.getMainFrustumCone(Number(viewDistance)))
+        }
+
+        function drawFrustum(frustumPolygon) {
+            let { pointRadius, pointColor, frustumColor } = options;
+
+            ctx.fillStyle = frustumColor;
+            ctx.strokeStyle = frustumColor;
+            ctx.beginPath();
+            for (let i = 0; i < frustumPolygon.length; i++) {
+                ctx.lineTo(CANVAS_MARGIN + frustumPolygon[i].x, CANVAS_MARGIN + CANVAS_HEIGHT - frustumPolygon[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawRooms() {
+            let { wallColor, roomNameEnabled, roomColorEnabled, roomNameSize } = options;
+
+            for (const roomId in scene.rooms) {
+                const room = scene.rooms[roomId];
+                const firstVertex = scene.vertices[room.vertices[0]]
+                const lastVertex = scene.vertices[room.vertices[room.vertices.length - 1]]
+                ctx.beginPath();
+                ctx.moveTo(CANVAS_MARGIN + lastVertex.x, CANVAS_MARGIN + CANVAS_HEIGHT - lastVertex.y);
+                room.vertices.forEach((i) => {
+                    const vertex = scene.vertices[i]
+                    if (room.openings.indexOf(i) == -1) {
+                        ctx.lineTo(CANVAS_MARGIN + vertex.x, CANVAS_MARGIN + CANVAS_HEIGHT - vertex.y);
+                    } else {
+                        ctx.moveTo(CANVAS_MARGIN + vertex.x, CANVAS_MARGIN + CANVAS_HEIGHT - vertex.y);
+                    }
+                })
+                ctx.strokeStyle = wallColor;
+                ctx.stroke();
+
+                if (roomNameEnabled) {
+                    const nameX = CANVAS_MARGIN + firstVertex.x + roomNameSize / 5
+                    const nameY = CANVAS_MARGIN + CANVAS_HEIGHT - firstVertex.y + Number(roomNameSize)
+                    ctx.fillStyle = room.color;
+                    ctx.font = roomNameSize + 'px serif';
+                    ctx.fillText(roomId, nameX, nameY);
+                }
+
+                if (roomColorEnabled) {
+                    ctx.beginPath();
+                    room.vertices.forEach((i) => {
+                        ctx.lineTo(CANVAS_MARGIN + scene.vertices[i].x, CANVAS_MARGIN + CANVAS_HEIGHT - scene.vertices[i].y);
+                    })
+                    ctx.fillStyle = room.color + "60";
+                    ctx.fill();
+                }
+            }
+        }
+
+        function draw() {
+            let { cameraEnabled } = options
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (cameraEnabled)
+                drawCamera();
+            drawRooms();
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        let startingRoomId = document.getElementById("currentRoom").value
+        let startingDirection = Number(document.getElementById("cameraDirectionDegrees").value)
+        let startingFov = Number(document.getElementById("cameraFovDegrees").value)
+
+        var scene = presetScene;
+        var camera = {
+            currentRoom: startingRoomId,
+            position: getRoomCenter(scene, startingRoomId),
+            directionAngle: startingDirection,
+            fov: startingFov,
+            getMainFrustumCone: function (viewDistance) {
+                return [
+                    this.position,
+                    sumVectors(this.position, mulVector(angleToNormalVector(this.directionAngle + this.fov / 2), viewDistance)),
+                    sumVectors(this.position, mulVector(angleToNormalVector(this.directionAngle - this.fov / 2), viewDistance))
+                ]
+            }
+        }
+
+        document.getElementById("cameraX").value = camera.position.x
+        document.getElementById("cameraY").value = camera.position.y
+        portalCulling(scene, camera);
+        draw();
+    </script>
+
+</body>
+
+</html>

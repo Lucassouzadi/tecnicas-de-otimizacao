@@ -86,3 +86,25 @@ function pointInTriangle(p1, p2, p3, p) {
     var dot3 = dot(v3, v3_)
     return 0 >= dot1 && 0 >= dot2 && 0 >= dot3
 }
+
+function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+function angleToNormalVector(ngle) {
+    return { x: Math.cos(degToRad(ngle)), y: Math.sin(degToRad(ngle)) }
+}
+
+function sumVectors(v1, v2) {
+    return {
+        x: v1.x + v2.x,
+        y: v1.y + v2.y
+    }
+}
+
+function mulVector(v, n) {
+    return {
+        x: v.x * n,
+        y: v.y * n
+    }
+}
