@@ -75,7 +75,7 @@ function isEar(P, active, p) {
     for (let j = 0; isEar && j < active.length; j++) {
         let tested = active[j];
         if (tested == p0 || tested == p1 || tested == p2) continue;
-        isEar = clockwise ? !pointInTriangle(P[p2], P[p1], P[p0], P[tested]) : !pointInTriangle(P[p0], P[p1], P[p2], P[tested])
+        isEar = clockwise ? !pointInsideTriangle(P[p2], P[p1], P[p0], P[tested]) : !pointInsideTriangle(P[p0], P[p1], P[p2], P[tested])
     }
     return isEar;
 }

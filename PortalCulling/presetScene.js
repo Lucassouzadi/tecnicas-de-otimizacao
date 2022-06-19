@@ -1,6 +1,14 @@
 
 function getRoomCenter(scene, roomId) {
     const room = scene.rooms[roomId];
+    const [p0, p1] = getRoomBoundingBox(scene, room)
+    return {
+        x: (p0.x + p1.x) / 2.0,
+        y: (p0.y + p1.y) / 2.0
+    }
+}
+
+function getRoomBoundingBox(scene, room) {
     const firstVertex = scene.vertices[room.vertices[0]];
     let lowestX = firstVertex.x,
         lowestY = firstVertex.y,
@@ -13,10 +21,10 @@ function getRoomCenter(scene, roomId) {
         highestX = vertex.x > highestX ? vertex.x : highestX
         highestY = vertex.y > highestY ? vertex.y : highestY
     }
-    return {
-        x: (lowestX + highestX) / 2.0,
-        y: (lowestY + highestY) / 2.0
-    }
+    return [
+        { x: lowestX, y: lowestY },
+        { x: highestX, y: highestY }
+    ]
 }
 
 let portalAB = { room1: "A", room2: "B", vertices: [2, 3] }
@@ -37,7 +45,8 @@ let objects = {
     "i": { x: 460, y: 230, radius: 15 },
     "j": { x: 620, y: 50, radius: 25 },
     "k": { x: 760, y: 110, radius: 15 },
-    "l": { x: 680, y: 260, radius: 30 }
+    "l": { x: 680, y: 260, radius: 30 },
+    "m": { x: 150, y: 250 - 30, radius: 30 }
 }
 
 var presetScene = {
@@ -71,7 +80,7 @@ var presetScene = {
             vertices: [0, 1, 2, 3, 4, 5, 6, 7],
             openings: [3, 5],
             portals: [portalAB, portalAC],
-            objects: ["a", "b"]
+            objects: ["a", "b", "m"]
         },
         "B": {
             color: "#336699",
@@ -99,7 +108,7 @@ var presetScene = {
             vertices: [20, 19, 18, 17, 21, 16, 15, 14],
             openings: [18, 14],
             portals: [portalCE, portalDE],
-            objects: ["l"]
+            objects: ["j", "k"]
         }
     },
     portals: [

@@ -44,8 +44,13 @@ function normalizeArrayPositively(array) {
 
 // ccw > 0: counter-clockwise; ccw < 0: clockwise; ccw = 0: collinear
 function ccw(p1, p2, p3) {
-    return (p2.x - p1.x) * (p3.y - p1.y)
+    const value = (p2.x - p1.x) * (p3.y - p1.y)
         - (p2.y - p1.y) * (p3.x - p1.x);
+
+    if (value == 0)
+        return 0;
+
+    return (value < 0) ? -1 : 1;
 }
 
 function polarAngle(vec) {
@@ -75,7 +80,7 @@ function dot(v1, v2) {
 }
 
 
-function pointInTriangle(p1, p2, p3, p) {
+function pointInsideTriangle(p1, p2, p3, p) {
     const v1 = { x: p2.y - p1.y, y: -p2.x + p1.x }  //  left-orthogonal to p1-->p2
     const v2 = { x: p3.y - p2.y, y: -p3.x + p2.x }  //  left-orthogonal to p2-->p3
     const v3 = { x: p1.y - p3.y, y: -p1.x + p3.x }  //  left-orthogonal to p3-->p1
@@ -110,9 +115,34 @@ function subtractVectors(v1, v2) {
     }
 }
 
-function mulVector(v, n) {
+function multiplyVector(v, n) {
     return {
         x: v.x * n,
         y: v.y * n
     }
+}
+
+function sphereInsideTriangle(p1, p2, p3, c, r) {
+    let inside = pointInsideTriangle(p1, p2, p3, c)
+
+    const lineSegments = [[p1, p2], [p2, p3], [p3, p1]]
+    for (let i = 0; !inside && i < lineSegments.length; i++) {
+        const p = lineSegments[i][0]
+        const q = lineSegments[i][1]
+        const pq = subtractVectors(q, p)
+        const pc = subtractVectors(c, p)
+        const t = dot(pc, pq) / dot(pq, pq)
+        if (t < 0)
+            nearest = p
+        else if (t > 1)
+            nearest = q
+        else
+            nearest = sumVectors(p, multiplyVector(pq, t))
+        inside = magnitude(subtractVectors(nearest, c)) < r
+    }
+    return inside
+}
+
+function magnitude(v) {
+    return Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2))
 }

@@ -15,7 +15,8 @@
         }
 
         strong {
-            font-size: 20px;
+            font-size: 24px;
+            margin-bottom: 8px;
         }
 
         #enableOptions {
@@ -40,6 +41,9 @@
     <div id="myDiv">
         <div id="header"></div>
         <canvas id="myCanvas"></canvas>
+        <strong>Clique no canvas para mover a câmera</strong>
+        <strong>Use W e S para mudar o FOV da câmera</strong>
+        <strong>Use A e D para mudar a direção da câmera</strong>
         <div>Sala atual:
             <select id="currentRoom" class="runPortalCulling">
                 <option value="A" selected>A</option>
@@ -56,10 +60,10 @@
             <input type="number" id="cameraY" class="runPortalCulling" min="0" max="500">
         </div>
         <div>Direção da câmera (graus):
-            <input type="number" id="cameraDirectionDegrees" class="runPortalCulling" value="45">
+            <input type="number" id="cameraDirectionDegrees" class="runPortalCulling" value="0">
         </div>
         <div>FOV (graus):
-            <input type="number" id="cameraFovDegrees" class="runPortalCulling" value="75">
+            <input type="number" id="cameraFovDegrees" class="runPortalCulling" value="70">
         </div>
         <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
         <div id="options">
@@ -68,6 +72,8 @@
             <div>Habilita cores das salas<input type="checkbox" id="roomColorEnabled" class="refreshCanvas" checked>
             </div>
             <div>Habilita nomes das salas<input type="checkbox" id="roomNameEnabled" class="refreshCanvas" checked>
+            </div>
+            <div>Habilita nomes dos objetos<input type="checkbox" id="objectNameEnabled" class="refreshCanvas" checked>
             </div>
             <div>Raio do ponto:<input type="number" id="pointRadius" class="refreshCanvas" value="8"></div>
             <div>Tamanho do nome das salas:<input type="number" id="roomNameSize" class="refreshCanvas" value="36">
@@ -92,6 +98,11 @@
         var CANVAS_WIDTH = 1000;
         var CANVAS_HEIGHT = 500;
         var CANVAS_MARGIN = 50;
+
+        var FOV_UP_KEY = 87;
+        var FOV_DOWN_KEY = 83;
+        var DIRECTION_UP_KEY = 65;
+        var DIRECTION_DOWN_KEY = 68;
 
         var canvas = document.getElementById("myCanvas");
         var ctx = canvas.getContext("2d");
@@ -128,11 +139,11 @@
         });
 
         document.getElementById("cameraX").addEventListener("change", () => {
-            camera.position.x = Number(document.getElementById("cameraX").value)
+            updatePositionAndRoom(Number(document.getElementById("cameraX").value), camera.position.y)
         });
 
         document.getElementById("cameraY").addEventListener("change", () => {
-            camera.position.y = Number(document.getElementById("cameraY").value)
+            updatePositionAndRoom(camera.position.x, Number(document.getElementById("cameraY").value))
         });
 
         document.getElementById("cameraDirectionDegrees").addEventListener("change", () => {
@@ -153,8 +164,7 @@
         var runPortalCulling = document.getElementsByClassName("runPortalCulling");
         for (let i = 0; i < runPortalCulling.length; i++) {
             runPortalCulling[i].addEventListener("change", () => {
-                portalCulling(scene, camera)
-                draw();
+                runPortalCulling()
             });
         }
 
@@ -171,15 +181,84 @@
             }
         });
 
-        canvas.addEventListener('click', function (e) {
+        canvas.addEventListener('mousemove', function (event) {
+            if (options["mousedown"]) {
+                // console.log("mouse drag", "(x: " + mouseX + " y: " + mouseY + ")")
+                const rect = canvas.getBoundingClientRect()
+                const x = event.clientX - rect.left - CANVAS_MARGIN
+                const y = -event.clientY + rect.top + CANVAS_HEIGHT + CANVAS_MARGIN
+
+                updatePositionAndRoom(x, y)
+            }
+        })
+
+        window.addEventListener('mousedown', (event) => {
+            options['mousedown'] = true
+
             const rect = canvas.getBoundingClientRect()
             const x = event.clientX - rect.left - CANVAS_MARGIN
             const y = -event.clientY + rect.top + CANVAS_HEIGHT + CANVAS_MARGIN
-            console.log("mouse click", "(x: " + x + " y: " + y + ")")
+            updatePositionAndRoom(x, y)
         })
+
+        window.addEventListener('mouseup', (event) => {
+            options['mousedown'] = false
+        })
+
+        window.addEventListener('keydown', (event) => {
+            console.log(event.keyCode)
+            let update = false
+            if (FOV_UP_KEY == event.keyCode) {
+                camera.fov++
+                runPortalCulling()
+                update = true
+            }
+            if (FOV_DOWN_KEY == event.keyCode) {
+                camera.fov--
+                runPortalCulling()
+                update = true
+            }
+            if (DIRECTION_UP_KEY == event.keyCode) {
+                camera.directionAngle++
+                runPortalCulling()
+                update = true
+            }
+            if (DIRECTION_DOWN_KEY == event.keyCode) {
+                camera.directionAngle--
+                runPortalCulling()
+                update = true
+            }
+            if (update) {
+                document.getElementById("cameraDirectionDegrees").value = camera.directionAngle
+                document.getElementById("cameraFovDegrees").value = camera.fov
+            }
+        })
+
 
     </script>
     <script type="text/javascript">
+
+        function runPortalCulling() {
+            portalCulling(scene, camera);
+            draw();
+        }
+
+        function updatePositionAndRoom(x, y) {
+
+            for (const roomId in scene.rooms) {
+                const room = scene.rooms[roomId];
+                const bb = getRoomBoundingBox(scene, room)
+                if (x > bb[0].x && x < bb[1].x && y > bb[0].y && y < bb[1].y) {
+                    camera.currentRoom = roomId
+                    camera.position = { x, y }
+                    document.getElementById("currentRoom").value = roomId
+                    document.getElementById("cameraX").value = x
+                    document.getElementById("cameraY").value = y
+                    runPortalCulling()
+                    break;
+                }
+            }
+        }
 
         function drawPoint(point, color) {
             let drawX = point.x + CANVAS_MARGIN, drawY = CANVAS_HEIGHT - point.y + CANVAS_MARGIN;
@@ -214,18 +293,20 @@
         }
 
         function drawObjects() {
-            let { objectColor, objectNameColor } = options;
+            let { objectColor, objectNameColor, objectNameEnabled } = options;
 
             for (const objectId in scene.objects) {
                 const object = scene.objects[objectId];
                 drawPoint(object, objectColor + (object.visible ? "CC" : "30"))
 
-                const nameSize = object.radius * 1.6;
-                const nameX = CANVAS_MARGIN + object.x - (nameSize * 0.2)
-                const nameY = CANVAS_MARGIN + CANVAS_HEIGHT - object.y + (nameSize * 0.25)
-                ctx.fillStyle = objectNameColor;
-                ctx.font = nameSize + 'px serif';
-                ctx.fillText(objectId, nameX, nameY);
+                if (objectNameEnabled) {
+                    const nameSize = object.radius * 1.6;
+                    const nameX = CANVAS_MARGIN + object.x - (nameSize * 0.2)
+                    const nameY = CANVAS_MARGIN + CANVAS_HEIGHT - object.y + (nameSize * 0.25)
+                    ctx.fillStyle = objectNameColor;
+                    ctx.font = nameSize + 'px serif';
+                    ctx.fillText(objectId, nameX, nameY);
+                }
             }
         }
 
@@ -295,16 +376,15 @@
             getMainFrustum: function (viewDistance) {
                 return [
                     this.position,
-                    sumVectors(this.position, mulVector(angleToNormalVector(this.directionAngle + this.fov / 2), viewDistance)),
-                    sumVectors(this.position, mulVector(angleToNormalVector(this.directionAngle - this.fov / 2), viewDistance))
+                    sumVectors(this.position, multiplyVector(angleToNormalVector(this.directionAngle + this.fov / 2), viewDistance)),
+                    sumVectors(this.position, multiplyVector(angleToNormalVector(this.directionAngle - this.fov / 2), viewDistance))
                 ]
             }
         }
 
         document.getElementById("cameraX").value = camera.position.x
         document.getElementById("cameraY").value = camera.position.y
-        portalCulling(scene, camera);
-        draw();
+        runPortalCulling()
     </script>
 
 </body>
