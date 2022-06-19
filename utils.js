@@ -74,6 +74,7 @@ function dot(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y
 }
 
+
 function pointInTriangle(p1, p2, p3, p) {
     const v1 = { x: p2.y - p1.y, y: -p2.x + p1.x }  //  left-orthogonal to p1-->p2
     const v2 = { x: p3.y - p2.y, y: -p3.x + p2.x }  //  left-orthogonal to p2-->p3
@@ -99,6 +100,13 @@ function sumVectors(v1, v2) {
     return {
         x: v1.x + v2.x,
         y: v1.y + v2.y
+    }
+}
+
+function subtractVectors(v1, v2) {
+    return {
+        x: v1.x - v2.x,
+        y: v1.y - v2.y
     }
 }
 

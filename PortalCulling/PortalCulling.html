@@ -64,6 +64,7 @@
         <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
         <div id="options">
             <div>Habilita camera<input type="checkbox" id="cameraEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita objetos<input type="checkbox" id="objectsEnabled" class="refreshCanvas" checked></div>
             <div>Habilita cores das salas<input type="checkbox" id="roomColorEnabled" class="refreshCanvas" checked>
             </div>
             <div>Habilita nomes das salas<input type="checkbox" id="roomNameEnabled" class="refreshCanvas" checked>
@@ -73,13 +74,16 @@
             </div>
             <div>Cor dos pontos:<input type="text" id="pointColor" class="refreshCanvas" value="#0095DD"> </div>
             <div>Cor das paredes:<input type="text" id="wallColor" class="refreshCanvas" value="#000000"> </div>
-            <div>Cor do Frustum:<input type="text" id="frustumColor" class="refreshCanvas" value="#6317CF30"> </div>
-            <div>Distância de visão<input type="text" id="viewDistance" class="refreshCanvas" value="5000" disabled>
-            </div>
+            <div>Cor dos objetos:<input type="text" id="objectColor" class="refreshCanvas" value="#000000"> </div>
+            <div>Cor do nome dos objetos:<input type="text" id="objectNameColor" class="refreshCanvas"
+                    value="#FFFFFF80"> </div>
+            <div>Cor do Frustum:<input type="text" id="frustumColor" class="refreshCanvas" value="#6317CF28"> </div>
         </div>
+    </div>
     </div>
 
     <script src="../utils.js"></script>
+    <script src="../ConvexHull/quickHull.js"></script>
     <script src="presetScene.js"></script>
     <script src="portalCulling.js"></script>
 
@@ -116,9 +120,9 @@
         }
 
         document.getElementById("currentRoom").addEventListener("change", () => {
-            let currentRoom = document.getElementById("currentRoom").value;
-            camera.currentRoom = currentRoom;
-            camera.position = getRoomCenter(scene, currentRoom)
+            let currentRoomId = document.getElementById("currentRoom").value;
+            camera.currentRoom = currentRoomId;
+            camera.position = getRoomCenter(scene, currentRoomId)
             document.getElementById("cameraX").value = camera.position.x
             document.getElementById("cameraY").value = camera.position.y
         });
@@ -128,7 +132,7 @@
         });
 
         document.getElementById("cameraY").addEventListener("change", () => {
-            camera.position.x = Number(document.getElementById("cameraY").value)
+            camera.position.y = Number(document.getElementById("cameraY").value)
         });
 
         document.getElementById("cameraDirectionDegrees").addEventListener("change", () => {
@@ -179,19 +183,21 @@
 
         function drawPoint(point, color) {
             let drawX = point.x + CANVAS_MARGIN, drawY = CANVAS_HEIGHT - point.y + CANVAS_MARGIN;
-            let { pointRadius } = options;
+            let radius = point.radius != null ? point.radius : options["pointRadius"]
             ctx.beginPath();
-            ctx.arc(drawX, drawY, pointRadius, 0, Math.PI * 2);
             ctx.fillStyle = color;
+            ctx.arc(drawX, drawY, radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.closePath();
         }
 
         function drawCamera() {
-            let { pointRadius, pointColor, viewDistance } = options;
+            let { pointRadius, pointColor } = options;
 
             drawPoint(camera.position, options["pointColor"]);
-            drawFrustum(camera.getMainFrustumCone(Number(viewDistance)))
+            camera.frustum.forEach(frustum => {
+                drawFrustum(frustum)
+            });
         }
 
         function drawFrustum(frustumPolygon) {
@@ -205,6 +211,22 @@
             }
             ctx.closePath();
             ctx.fill();
+        }
+
+        function drawObjects() {
+            let { objectColor, objectNameColor } = options;
+
+            for (const objectId in scene.objects) {
+                const object = scene.objects[objectId];
+                drawPoint(object, objectColor + (object.visible ? "CC" : "30"))
+
+                const nameSize = object.radius * 1.6;
+                const nameX = CANVAS_MARGIN + object.x - (nameSize * 0.2)
+                const nameY = CANVAS_MARGIN + CANVAS_HEIGHT - object.y + (nameSize * 0.25)
+                ctx.fillStyle = objectNameColor;
+                ctx.font = nameSize + 'px serif';
+                ctx.fillText(objectId, nameX, nameY);
+            }
         }
 
         function drawRooms() {
@@ -228,7 +250,7 @@
                 ctx.stroke();
 
                 if (roomNameEnabled) {
-                    const nameX = CANVAS_MARGIN + firstVertex.x + roomNameSize / 5
+                    const nameX = CANVAS_MARGIN + firstVertex.x + (roomNameSize / 5)
                     const nameY = CANVAS_MARGIN + CANVAS_HEIGHT - firstVertex.y + Number(roomNameSize)
                     ctx.fillStyle = room.color;
                     ctx.font = roomNameSize + 'px serif';
@@ -247,11 +269,13 @@
         }
 
         function draw() {
-            let { cameraEnabled } = options
+            let { cameraEnabled, objectsEnabled } = options
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRooms();
             if (cameraEnabled)
                 drawCamera();
-            drawRooms();
+            if (objectsEnabled)
+                drawObjects();
         }
 
     </script>
@@ -267,7 +291,8 @@
             position: getRoomCenter(scene, startingRoomId),
             directionAngle: startingDirection,
             fov: startingFov,
-            getMainFrustumCone: function (viewDistance) {
+            frustum: [],
+            getMainFrustum: function (viewDistance) {
                 return [
                     this.position,
                     sumVectors(this.position, mulVector(angleToNormalVector(this.directionAngle + this.fov / 2), viewDistance)),

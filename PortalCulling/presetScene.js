@@ -14,8 +14,8 @@ function getRoomCenter(scene, roomId) {
         highestY = vertex.y > highestY ? vertex.y : highestY
     }
     return {
-        x: (lowestX + highestX) / 2,
-        y: (lowestY + highestY) / 2
+        x: (lowestX + highestX) / 2.0,
+        y: (lowestY + highestY) / 2.0
     }
 }
 
@@ -24,6 +24,21 @@ let portalAC = { room1: "A", room2: "C", vertices: [4, 5] }
 let portalBD = { room1: "B", room2: "D", vertices: [10, 11] }
 let portalCE = { room1: "C", room2: "E", vertices: [14, 15] }
 let portalDE = { room1: "D", room2: "E", vertices: [18, 19] }
+
+let objects = {
+    "a": { x: 50, y: 420, radius: 20 },
+    "b": { x: 100, y: 100, radius: 25 },
+    "c": { x: 250, y: 480, radius: 15 },
+    "d": { x: 300, y: 430, radius: 25 },
+    "e": { x: 450, y: 320, radius: 25 },
+    "f": { x: 680, y: 430, radius: 25 },
+    "g": { x: 270, y: 40, radius: 15 },
+    "h": { x: 420, y: 160, radius: 30 },
+    "i": { x: 460, y: 230, radius: 15 },
+    "j": { x: 620, y: 50, radius: 25 },
+    "k": { x: 760, y: 110, radius: 15 },
+    "l": { x: 680, y: 260, radius: 30 }
+}
 
 var presetScene = {
     vertices: [
@@ -55,31 +70,36 @@ var presetScene = {
             color: "#0C9905",
             vertices: [0, 1, 2, 3, 4, 5, 6, 7],
             openings: [3, 5],
-            portals: [portalAB, portalAC]
+            portals: [portalAB, portalAC],
+            objects: ["a", "b"]
         },
         "B": {
             color: "#336699",
             vertices: [1, 8, 9, 10, 11, 12, 3, 2],
             openings: [11, 2],
-            portals: [portalAB, portalBD]
+            portals: [portalAB, portalBD],
+            objects: ["c", "d", "e", "f", "l"]
         },
         "C": {
             color: "#99CCFF",
             vertices: [12, 13, 14, 15, 16, 6, 5, 4],
             openings: [15, 4],
-            portals: [portalAC, portalCE]
+            portals: [portalAC, portalCE],
+            objects: ["g", "h", "i"]
         },
         "D": {
             color: "#FF0B0B",
             vertices: [13, 11, 10, 9, 17, 18, 19, 20],
             openings: [10, 19],
-            portals: [portalBD, portalDE]
+            portals: [portalBD, portalDE],
+            objects: ["j", "k"]
         },
         "E": {
             color: "#CF8831",
             vertices: [20, 19, 18, 17, 21, 16, 15, 14],
             openings: [18, 14],
-            portals: [portalCE, portalDE]
+            portals: [portalCE, portalDE],
+            objects: ["l"]
         }
     },
     portals: [
@@ -88,5 +108,6 @@ var presetScene = {
         portalBD,
         portalCE,
         portalDE
-    ]
+    ],
+    objects
 }
