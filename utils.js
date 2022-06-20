@@ -43,14 +43,21 @@ function normalizeArrayPositively(array) {
 }
 
 // ccw > 0: counter-clockwise; ccw < 0: clockwise; ccw = 0: collinear
-function ccw(p1, p2, p3) {
-    const value = (p2.x - p1.x) * (p3.y - p1.y)
-        - (p2.y - p1.y) * (p3.x - p1.x);
+function ccw(p0, p1, p2) {
+    let dx1 = p1.x - p0.x
+    let dy1 = p1.y - p0.y
+    let dx2 = p2.x - p1.x
+    let dy2 = p2.y - p1.y
+    let crossProductZ = dx1 * dy2 - dy1 * dx2
+    return crossProductZ
+}
 
-    if (value == 0)
-        return 0;
-
-    return (value < 0) ? -1 : 1;
+// ccw = 1: counter-clockwise; ccw = -1: clockwise; ccw = 0: collinear
+function tripletOrientation(p0, p1, p2) {
+    let crossProductZ = ccw(p0, p1, p2);
+    if (crossProductZ == 0) return 0
+    if (crossProductZ < 0) return -1
+    if (crossProductZ > 0) return 1
 }
 
 function polarAngle(vec) {
@@ -67,18 +74,12 @@ function polarAngle(vec) {
 }
 
 function isAngleConvex(p0, p1, p2) {
-    let dx1 = p1.x - p0.x
-    let dy1 = p1.y - p0.y
-    let dx2 = p2.x - p1.x
-    let dy2 = p2.y - p1.y
-    let crossProductZ = dx1 * dy2 - dy1 * dx2
-    return crossProductZ > 0.0;
+    return ccw(p0, p1, p2) > 0.0;
 }
 
 function dot(v1, v2) {
     return v1.x * v2.x + v1.y * v2.y
 }
-
 
 function pointInsideTriangle(p1, p2, p3, p) {
     const v1 = { x: p2.y - p1.y, y: -p2.x + p1.x }  //  left-orthogonal to p1-->p2
@@ -122,11 +123,16 @@ function multiplyVector(v, n) {
     }
 }
 
+function magnitude(v) {
+    return Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2))
+}
+
 function sphereInsideTriangle(p1, p2, p3, c, r) {
     let inside = pointInsideTriangle(p1, p2, p3, c)
 
     const lineSegments = [[p1, p2], [p2, p3], [p3, p1]]
     for (let i = 0; !inside && i < lineSegments.length; i++) {
+        // https://diego.assencio.com/?index=ec3d5dfdfc0b6a0d147a656f0af332bd
         const p = lineSegments[i][0]
         const q = lineSegments[i][1]
         const pq = subtractVectors(q, p)
@@ -143,6 +149,31 @@ function sphereInsideTriangle(p1, p2, p3, c, r) {
     return inside
 }
 
-function magnitude(v) {
-    return Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2))
+function lineLineIntersection(p1, p2, p3, p4) {
+    // Line p1_p2 represented as a1*x + b1*y = c1
+    let a1 = p2.y - p1.y;
+    let b1 = p1.x - p2.x;
+    let c1 = a1 * (p1.x) + b1 * (p1.y);
+
+    // Line p3_p4 represented as a2*x + b2*y = c2
+    let a2 = p4.y - p3.y;
+    let b2 = p3.x - p4.x;
+    let c2 = a2 * (p3.x) + b2 * (p3.y);
+
+    let determinant = a1 * b2 - a2 * b1;
+
+    if (determinant == 0) {
+        return "paralell"
+    }
+    else {
+        let x = (b2 * c1 - b1 * c2) / determinant;
+        let y = (a1 * c2 - a2 * c1) / determinant;
+        return { x, y };
+    }
+}
+
+// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
+function doIntersect(p1, p2, p3, p4) {
+    return tripletOrientation(p1, p2, p3) != tripletOrientation(p1, p2, p4)
+        && tripletOrientation(p3, p4, p1) != tripletOrientation(p3, p4, p2)
 }

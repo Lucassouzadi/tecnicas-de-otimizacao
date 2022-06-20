@@ -60,14 +60,14 @@
             <input type="number" id="cameraY" class="runPortalCulling" min="0" max="500">
         </div>
         <div>Direção da câmera (graus):
-            <input type="number" id="cameraDirectionDegrees" class="runPortalCulling" value="0">
+            <input type="number" id="cameraDirectionDegrees" class="runPortalCulling" value="50">
         </div>
         <div>FOV (graus):
             <input type="number" id="cameraFovDegrees" class="runPortalCulling" value="70">
         </div>
         <button id="enableOptions"> <strong>˄</strong> Esconder opções <strong>˄</strong> </button>
         <div id="options">
-            <div>Habilita camera<input type="checkbox" id="cameraEnabled" class="refreshCanvas" checked></div>
+            <div>Habilita câmera<input type="checkbox" id="cameraEnabled" class="refreshCanvas" checked></div>
             <div>Habilita objetos<input type="checkbox" id="objectsEnabled" class="refreshCanvas" checked></div>
             <div>Habilita cores das salas<input type="checkbox" id="roomColorEnabled" class="refreshCanvas" checked>
             </div>
@@ -182,7 +182,7 @@
         });
 
         canvas.addEventListener('mousemove', function (event) {
-            if (options["mousedown"]) {
+            if (options['mousedown']) {
                 // console.log("mouse drag", "(x: " + mouseX + " y: " + mouseY + ")")
                 const rect = canvas.getBoundingClientRect()
                 const x = event.clientX - rect.left - CANVAS_MARGIN
@@ -206,31 +206,28 @@
         })
 
         window.addEventListener('keydown', (event) => {
-            console.log(event.keyCode)
+            // console.log(event.keyCode)
             let update = false
             if (FOV_UP_KEY == event.keyCode) {
                 camera.fov++
-                runPortalCulling()
                 update = true
             }
             if (FOV_DOWN_KEY == event.keyCode) {
                 camera.fov--
-                runPortalCulling()
                 update = true
             }
             if (DIRECTION_UP_KEY == event.keyCode) {
                 camera.directionAngle++
-                runPortalCulling()
                 update = true
             }
             if (DIRECTION_DOWN_KEY == event.keyCode) {
                 camera.directionAngle--
-                runPortalCulling()
                 update = true
             }
             if (update) {
                 document.getElementById("cameraDirectionDegrees").value = camera.directionAngle
                 document.getElementById("cameraFovDegrees").value = camera.fov
+                runPortalCulling()
             }
         })
 
@@ -244,7 +241,6 @@
         }
 
         function updatePositionAndRoom(x, y) {
-
             for (const roomId in scene.rooms) {
                 const room = scene.rooms[roomId];
                 const bb = getRoomBoundingBox(scene, room)
@@ -297,7 +293,7 @@
 
             for (const objectId in scene.objects) {
                 const object = scene.objects[objectId];
-                drawPoint(object, objectColor + (object.visible ? "CC" : "30"))
+                drawPoint(object, objectColor + (object.visible ? "D8" : "28"))
 
                 if (objectNameEnabled) {
                     const nameSize = object.radius * 1.6;
@@ -384,6 +380,10 @@
 
         document.getElementById("cameraX").value = camera.position.x
         document.getElementById("cameraY").value = camera.position.y
+
+        // console.log("camera", camera)
+        // console.log("scene", scene)
+
         runPortalCulling()
     </script>
 

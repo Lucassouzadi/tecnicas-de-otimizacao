@@ -101,7 +101,7 @@ var presetScene = {
             vertices: [13, 11, 10, 9, 17, 18, 19, 20],
             openings: [10, 19],
             portals: [portalBD, portalDE],
-            objects: ["j", "k"]
+            objects: ["l", "k"]
         },
         "E": {
             color: "#CF8831",
